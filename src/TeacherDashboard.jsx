@@ -649,6 +649,20 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
     window.open(previewUrl, "_blank", "noopener,noreferrer");
   };
 
+  const openTeacherGuidePage = () => {
+    const guideUrl = getAppPath({
+      role: "guide"
+    });
+    window.open(guideUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const openWrapUpPage = () => {
+    const wrapUpUrl = getAppPath({
+      role: "wrapup"
+    });
+    window.open(wrapUpUrl, "_blank", "noopener,noreferrer");
+  };
+
   const openPresentationView = () => {
     if (!selectedGroup?.id || !canOpenPresentation) return;
 
@@ -838,6 +852,20 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
             className="button-secondary h-12 px-4 text-sm"
           >
             학생용 화면 보기
+          </button>
+          <button
+            type="button"
+            onClick={openTeacherGuidePage}
+            className="button-secondary h-12 px-4 text-sm"
+          >
+            활동 가이드
+          </button>
+          <button
+            type="button"
+            onClick={openWrapUpPage}
+            className="button-secondary h-12 px-4 text-sm"
+          >
+            수업 마무리
           </button>
           <button
             type="button"

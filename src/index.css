@@ -1115,7 +1115,432 @@ button:active:not(:disabled) {
   background: #ffffff;
 }
 
+
+
+.guide-page {
+  min-height: 100vh;
+  background: var(--color-bg-soft);
+  padding: 28px;
+  color: var(--color-text);
+}
+
+.guide-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.guide-header h1 {
+  margin: 4px 0 8px;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.guide-header p:not(.brand-kicker) {
+  max-width: 900px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.guide-close-button {
+  min-width: 74px;
+  min-height: 50px;
+  padding: 0 18px;
+  font-size: 16px;
+}
+
+.guide-card,
+.guide-flow-card {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.guide-card {
+  padding: 22px;
+}
+
+.guide-card h2,
+.guide-flow-card h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.guide-card p {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.guide-card ul {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-card li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--color-text-muted);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.guide-card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.68em;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-brand);
+}
+
+.guide-intro-card {
+  border-left: 4px solid var(--color-brand);
+  margin-bottom: 18px;
+}
+
+.guide-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.guide-flow-card {
+  min-height: 210px;
+  padding: 18px;
+}
+
+.guide-flow-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.guide-flow-meta span,
+.guide-flow-meta strong {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.guide-flow-meta span {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+}
+
+.guide-flow-meta strong {
+  background: var(--color-bg-soft);
+  color: var(--color-text-muted);
+}
+
+.guide-flow-card p {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.guide-three-grid,
+.guide-bottom-grid {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.guide-three-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.guide-bottom-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+.guide-message-card {
+  border-top: 5px solid var(--color-case-border);
+  background: var(--color-case-bg);
+}
+
+.guide-message-card p:not(.panel-label) {
+  color: var(--color-case-text);
+  font-size: 22px;
+  font-weight: 800;
+}
+.wrapup-page {
+  display: grid;
+  height: 100vh;
+  min-height: 760px;
+  grid-template-rows: auto minmax(0, 1.04fr) minmax(0, 0.96fr) auto;
+  gap: 12px;
+  overflow: hidden;
+  background: var(--color-bg-soft);
+  padding: 16px 20px;
+  color: var(--color-text);
+}
+
+.wrapup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.wrapup-header h1 {
+  margin: 4px 0 0;
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.wrapup-close-button {
+  min-width: 72px;
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 17px;
+}
+
+.wrapup-grid-top,
+.wrapup-grid-bottom {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+}
+
+.wrapup-grid-top {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wrapup-grid-bottom {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wrapup-card {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  border: 1px solid var(--color-border-strong);
+  border-top: 5px solid var(--color-brand);
+  border-radius: var(--radius);
+  background: white;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.wrapup-card.wide {
+  min-height: 0;
+}
+
+.wrapup-card-rust {
+  border-top-color: #c45119;
+}
+
+.wrapup-card-green {
+  border-top-color: #2e7d4f;
+}
+
+.wrapup-card-gold {
+  border-top-color: #b77716;
+}
+
+.wrapup-card-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.wrapup-card-title h2 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: 0;
+}
+
+.wrapup-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: var(--radius);
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.wrapup-card-rust .wrapup-icon {
+  background: #fff0e8;
+  color: #c45119;
+}
+
+.wrapup-card-green .wrapup-icon {
+  background: #eaf5ee;
+  color: #2e7d4f;
+}
+
+.wrapup-card-gold .wrapup-icon {
+  background: #fff5df;
+  color: #b77716;
+}
+
+.wrapup-card ul {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wrapup-card.wide ul {
+  gap: 11px;
+}
+
+.wrapup-card li {
+  position: relative;
+  padding-left: 24px;
+  color: var(--color-text-muted);
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.48;
+}
+
+.wrapup-card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.68em;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--color-brand);
+}
+
+.wrapup-card-rust li::before {
+  background: #c45119;
+}
+
+.wrapup-card-green li::before {
+  background: #2e7d4f;
+}
+
+.wrapup-card-gold li::before {
+  background: #b77716;
+}
+
+.wrapup-quote {
+  display: grid;
+  min-height: 78px;
+  place-items: center;
+  gap: 2px;
+  margin: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: white;
+  padding: 10px 24px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.wrapup-quote p {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.16;
+}
+
+.wrapup-quote cite {
+  color: var(--color-text-muted);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+@media (max-height: 820px) and (min-width: 900px) {
+  .wrapup-page {
+    min-height: 680px;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .wrapup-header h1 {
+    font-size: 34px;
+  }
+
+  .wrapup-card {
+    padding: 16px 18px;
+  }
+
+  .wrapup-card-title {
+    margin-bottom: 10px;
+  }
+
+  .wrapup-card-title h2 {
+    font-size: 29px;
+  }
+
+  .wrapup-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+
+  .wrapup-card li {
+    font-size: 19px;
+    line-height: 1.34;
+  }
+
+  .wrapup-card ul,
+  .wrapup-card.wide ul {
+    gap: 7px;
+  }
+
+  .wrapup-quote {
+    min-height: 56px;
+  }
+
+  .wrapup-quote p {
+    font-size: 28px;
+  }
+}
 @media (max-width: 1100px) {
+  .wrapup-page {
+    height: auto;
+    min-height: 100vh;
+    grid-template-rows: auto;
+    overflow: visible;
+  }
+
   .dashboard-header {
     padding: 18px 24px;
   }
@@ -1132,7 +1557,13 @@ button:active:not(:disabled) {
   .lesson-flow-header,
   .result-panel-header,
   .timer-panel-grid,
-  .presentation-page .presentation-grid {
+  .presentation-page .presentation-grid,
+  .guide-header,
+  .guide-flow-grid,
+  .guide-three-grid,
+  .guide-bottom-grid,
+  .wrapup-grid-top,
+  .wrapup-grid-bottom {
     grid-template-columns: 1fr;
   }
 
@@ -1166,6 +1597,64 @@ button:active:not(:disabled) {
   }
 
   .dashboard-header h1 {
+    font-size: 24px;
+  }
+
+
+  .guide-page,
+  .wrapup-page {
+    padding: 18px;
+  }
+
+  .guide-header {
+    gap: 16px;
+  }
+
+  .guide-header h1 {
+    font-size: 28px;
+  }
+
+  .guide-close-button {
+    width: 100%;
+  }
+
+  .guide-card h2,
+  .guide-flow-card h2 {
+    font-size: 21px;
+  }
+
+  .guide-card li,
+  .guide-flow-card p {
+    font-size: 16px;
+  }
+
+  .wrapup-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wrapup-header h1 {
+    font-size: 28px;
+  }
+
+  .wrapup-close-button {
+    width: 100%;
+  }
+
+  .wrapup-card {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .wrapup-card-title h2 {
+    font-size: 22px;
+  }
+
+  .wrapup-card li {
+    font-size: 16px;
+  }
+
+  .wrapup-quote p {
     font-size: 24px;
   }
 

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import FirebaseSetupPanel from "./FirebaseSetupPanel";
 import StudentApp from "./StudentApp";
 import TeacherDashboard from "./TeacherDashboard";
+import TeacherGuidePage from "./TeacherGuidePage";
+import WrapUpPage from "./WrapUpPage";
 import { getAppPath, getRouteParams } from "./routes";
 
 export const TEACHER_PIN = "1234";
@@ -92,6 +94,9 @@ function StartScreen() {
         <label className="field-label mt-6">
           {role === "teacher" ? "교사용 PIN" : "참가 PIN"}
           <input
+            type={role === "teacher" ? "password" : "text"}
+            inputMode="numeric"
+            autoComplete="off"
             value={pin}
             onChange={event => {
               setMessage("");
@@ -189,6 +194,14 @@ export default function App() {
   const preview = params.get("preview") === "1";
   const presentation = params.get("presentation") === "1";
   const presentationExample = params.get("example") === "1";
+
+  if (role === "guide") {
+    return <TeacherGuidePage />;
+  }
+
+  if (role === "wrapup") {
+    return <WrapUpPage />;
+  }
 
   if (role === "teacher") {
     return <TeacherDashboard pin={pin} teacherPin={teacherPin} />;
