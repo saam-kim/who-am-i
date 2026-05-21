@@ -1,4 +1,5 @@
 import { getAppPath } from "./routes";
+import { CLASSROOM_SIMULATIONS } from "./lessonFlow";
 
 const flowItems = [
   {
@@ -134,6 +135,32 @@ export default function TeacherGuidePage() {
         ))}
       </section>
 
+      <section className="guide-card guide-simulation-section">
+        <p className="panel-label">수업 리허설 피드백</p>
+        <h2>세 번 돌려 보니 이런 장면이 생깁니다</h2>
+        <div className="guide-simulation-grid mt-5">
+          {CLASSROOM_SIMULATIONS.map(item => (
+            <article key={item.round} className="guide-simulation-card">
+              <p className="panel-label">{item.round}</p>
+              <h3>{item.situation}</h3>
+              <dl>
+                <div>
+                  <dt>교사 관점</dt>
+                  <dd>{item.teacherFeedback}</dd>
+                </div>
+                <div>
+                  <dt>학생 관점</dt>
+                  <dd>{item.studentFeedback}</dd>
+                </div>
+                <div>
+                  <dt>반영한 업그레이드</dt>
+                  <dd>{item.upgrade}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      </section>
       <section className="guide-bottom-grid">
         <article className="guide-card">
           <p className="panel-label">발표 안내</p>

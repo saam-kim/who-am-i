@@ -8,6 +8,7 @@ import {
   useGameData
 } from "./useGameData";
 import { getAppPath } from "./routes";
+import { getLessonPhaseGuide } from "./lessonFlow";
 
 const TEACHER_PIN = "1234";
 const AUTO_CREATE_LOCK_KEY = "constitution-game:auto-create-lock";
@@ -360,6 +361,43 @@ function TimerStartPanel({
 }
 
 
+function LessonCoachPanel({ phase, submittedCount, groupCount }) {
+  const guide = getLessonPhaseGuide(phase);
+
+  return (
+    <section className="panel lesson-coach-panel">
+      <div className="lesson-coach-header">
+        <div>
+          <p className="panel-label">수업 진행 코치</p>
+          <h2 className="panel-heading mt-1">{guide.title}</h2>
+        </div>
+        <div className="lesson-coach-progress">
+          <span>제출 현황</span>
+          <strong>{submittedCount}/{groupCount}</strong>
+        </div>
+      </div>
+
+      <div className="lesson-coach-grid mt-5">
+        <article>
+          <span>교사가 지금 할 일</span>
+          <p>{guide.teacherAction}</p>
+        </article>
+        <article>
+          <span>학생에게 던질 발문</span>
+          <p>{guide.prompt}</p>
+        </article>
+        <article>
+          <span>다음 단계로 넘어가기 전</span>
+          <p>{guide.evidence}</p>
+        </article>
+        <article>
+          <span>주의할 점</span>
+          <p>{guide.caution}</p>
+        </article>
+      </div>
+    </section>
+  );
+}
 function PhaseControls({ phase, onChange }) {
   const nextPhase = getNextPhase(phase);
 
@@ -960,6 +998,12 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
           )}
 
           <PhaseControls phase={phase} onChange={setPhase} />
+
+          <LessonCoachPanel
+            phase={phase}
+            submittedCount={submittedCount}
+            groupCount={groupList.length}
+          />
 
           <section className="panel">
             <div className="result-panel-header">

@@ -9,6 +9,7 @@ import {
   getWagePolicy,
   useGameData
 } from "./useGameData";
+import { getLessonPhaseGuide } from "./lessonFlow";
 
 const formatTime = seconds => {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -83,42 +84,75 @@ function PolicyInfo({ item }) {
 function getStudentInsights(result) {
   if (!result) return [];
 
-  const survivalStatus =
+  const survival =
     result.survivalIndex >= 80
-      ? "\uac00\uc7a5 \ubd88\ub9ac\ud55c \uc2dc\ubbfc\ub3c4 \uae30\ubcf8 \uc0dd\ud65c\uc744 \uc9c0\ud0ac \uac00\ub2a5\uc131\uc774 \ud07d\ub2c8\ub2e4."
+      ? {
+          status: "가장 불리한 시민도 기본 생활을 지킬 가능성이 큽니다.",
+          body: "생계, 의료, 주거 같은 최소한의 안전망이 비교적 두텁게 마련된 사회입니다. 위기에 놓인 시민이 한 번의 실패로 무너지지 않을 가능성이 커졌습니다. 다만 이 보호를 위해 누가 어떤 부담을 나누는지까지 함께 설명해야 합니다.",
+          question: "이 보호가 누구에게 가장 필요하고, 그 비용은 어떻게 나누면 공정할까요?"
+        }
       : result.survivalIndex >= 60
-        ? "\uae30\ubcf8 \uc0dd\ud65c\uc740 \uac00\ub2a5\ud558\uc9c0\ub9cc \ubd88\uc548\uc815\ud55c \ubd80\ubd84\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4."
-        : "\uac00\uc7a5 \ubd88\ub9ac\ud55c \uc704\uce58\uc5d0\uc11c\ub294 \uc0dd\ud65c \uc548\uc815\uc774 \ubd80\uc871\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.";
+        ? {
+            status: "기본 생활은 가능하지만 불안정한 부분이 남아 있습니다.",
+            body: "최소한의 안전망은 있지만, 실직·질병·주거 불안 같은 상황이 오면 가장 불리한 시민이 흔들릴 수 있습니다. 이 사회를 무지의 베일 뒤에서도 선택하려면 어떤 보호 장치를 더 보완해야 하는지 따져봐야 합니다.",
+            question: "어떤 시민이 가장 먼저 어려움을 겪고, 무엇을 보완해야 할까요?"
+          }
+        : {
+            status: "가장 불리한 위치에서는 생활 안정이 부족할 수 있습니다.",
+            body: "성장이나 자유를 우선한 대신, 생계와 의료, 주거를 스스로 감당하기 어려운 시민에게 위험이 커질 수 있습니다. 내가 그 위치에 놓인다면 이 규칙을 받아들일 수 있는지 다시 물어봐야 합니다.",
+            question: "가장 불리한 시민에게 이 사회를 어떻게 설명할 수 있을까요?"
+          };
 
-  const freedomStatus =
+  const freedom =
     result.assetGrowth >= 0
-      ? "\uacbd\uc81c \ud65c\ub3d9\uc758 \uc790\uc720\uac00 \ub110\ub110\ud788 \uc720\uc9c0\ub429\ub2c8\ub2e4."
+      ? {
+          status: "경제 활동의 자유가 넉넉히 유지됩니다.",
+          body: "세금과 규제가 비교적 가볍게 느껴져 투자, 창업, 자산 형성의 여지가 큽니다. 노력의 보상이 잘 보이는 사회일 수 있지만, 이 자유가 생활이 불안한 시민에게도 기회로 이어지는지 확인해야 합니다.",
+          question: "누가 더 자유로워지고, 그 자유에서 소외되는 시민은 없을까요?"
+        }
       : result.assetGrowth >= -15
-        ? "\uacf5\ub3d9\uccb4 \ubd80\ub2f4\uacfc \uacbd\uc81c \ud65c\ub3d9\uc758 \uc790\uc720\ub97c \ud568\uaed8 \ub530\uc838\ubcfc \ud544\uc694\uac00 \uc788\uc2b5\ub2c8\ub2e4."
-        : "\uc0ac\ud68c\uc801 \ubcf4\uc7a5\uc744 \uac15\ud654\ud55c \ub300\uc2e0 \uacbd\uc81c \ud65c\ub3d9\uc5d0 \ud070 \ubd80\ub2f4\uc774 \uc0dd\uae38 \uc218 \uc788\uc2b5\ub2c8\ub2e4.";
+        ? {
+            status: "공동체 부담과 경제 활동의 자유를 함께 따져볼 필요가 있습니다.",
+            body: "복지와 사회 안정을 위해 어느 정도 부담을 나누지만, 경제 활동의 동기를 완전히 꺾는 수준은 아닙니다. 이 균형이 설득력을 가지려면 세금을 내는 시민에게도 이유가 분명해야 합니다.",
+            question: "이 부담은 공동체를 위해 납득 가능한 수준인가요?"
+          }
+        : {
+            status: "사회적 보장을 강화한 대신 경제 활동에 큰 부담이 생길 수 있습니다.",
+            body: "가장 불리한 시민을 보호하는 힘은 커졌지만, 소득이 높거나 고용을 책임지는 시민은 노력의 보상이 줄었다고 느낄 수 있습니다. 평등을 위해 줄어든 자유를 어디까지 받아들일 수 있는지 논의해야 합니다.",
+            question: "평등을 위해 제한된 자유를 어떤 시민이 가장 크게 느낄까요?"
+          };
 
-  const integrationStatus =
+  const integration =
     result.socialIntegration >= 80
-      ? "\uc11c\ub85c \uac19\uc740 \uaddc\uce59\uc744 \ubc1b\uc544\ub4e4\uc77c \uac00\ub2a5\uc131\uc774 \ud07d\ub2c8\ub2e4."
+      ? {
+          status: "서로 같은 규칙을 받아들일 가능성이 큽니다.",
+          body: "계층 간 격차와 갈등이 비교적 낮아, 서로 다른 위치의 시민도 같은 제도를 공정하다고 느낄 여지가 큽니다. 이제 왜 이 균형이 우연이 아니라 공정한 설계인지 근거를 말해야 합니다.",
+          question: "다른 위치의 시민에게도 이 규칙을 설득할 수 있을까요?"
+        }
       : result.socialIntegration >= 60
-        ? "\ud568\uaed8 \uc0b4\uc544\uac08 \uc218 \uc788\uc9c0\ub9cc \uac08\ub4f1\uc744 \uc904\uc77c \ubcf4\uc644\uc774 \ud544\uc694\ud569\ub2c8\ub2e4."
-        : "\uc11c\ub85c\uac00 \uac19\uc740 \uaddc\uce59\uc744 \uacf5\uc815\ud558\ub2e4\uace0 \ubc1b\uc544\ub4e4\uc774\uae30 \uc5b4\ub824\uc6b8 \uc218 \uc788\uc2b5\ub2c8\ub2e4.";
+        ? {
+            status: "함께 살아갈 수 있지만 갈등을 줄일 보완이 필요합니다.",
+            body: "사회 전체가 크게 흔들리지는 않지만, 어떤 시민은 혜택보다 부담을 더 크게 느낄 수 있습니다. 2차 토론에서는 가장 불만을 가질 시민이 누구인지 찾아보고, 그 시민에게 답할 수 있어야 합니다.",
+            question: "어떤 시민이 이 제도에 가장 불만을 가질까요?"
+          }
+        : {
+            status: "서로가 같은 규칙을 공정하다고 받아들이기 어려울 수 있습니다.",
+            body: "계층 사이의 차이가 커져 공동체가 같은 방향으로 움직이기 어려운 사회입니다. 한쪽에는 자유나 이익이 커졌지만, 다른 쪽에는 불안과 박탈감이 커졌을 가능성이 있습니다.",
+            question: "누구에게 혜택이 가고, 누구에게 부담이 커졌나요?"
+          };
 
   return [
     {
       title: "가장 불리한 시민도 버틸 수 있는가?",
-      status: survivalStatus,
-      question: "누가 가장 보호받고, 누가 부담을 느낄까요?"
+      ...survival
     },
     {
       title: "경제 활동의 자유는 얼마나 남아 있는가?",
-      status: freedomStatus,
-      question: "누가 더 자유로워지고, 누가 더 부담을 지나요?"
+      ...freedom
     },
     {
       title: "모두가 이 규칙을 받아들일 수 있는가?",
-      status: integrationStatus,
-      question: "다른 위치의 시민도 이 규칙을 납득할 수 있을까요?"
+      ...integration
     }
   ];
 }
@@ -131,11 +165,13 @@ function StudentInsightCards({ result }) {
     <section className="panel mt-6">
       <p className="panel-label">{"우리 선택이 만든 결과"}</p>
       <h2 className="panel-heading mt-1">{"1차 설계 결과 살펴보기"}</h2>
+      <p className="student-insight-intro">{"우리 선택이 만든 사회를 세 가지 기준으로 읽어 봅니다. 점수가 아니라, 누구의 삶이 안정되고 누구에게 부담이 생기는지 살펴보세요."}</p>
       <div className="student-insight-grid mt-5">
         {insights.map(insight => (
           <article key={insight.title} className="interpretation-card student-insight-card">
             <p className="panel-label">{insight.title}</p>
             <h3>{insight.status}</h3>
+            <p>{insight.body}</p>
             <strong>{insight.question}</strong>
           </article>
         ))}
@@ -241,6 +277,28 @@ function EventCards({ cards = [] }) {
   );
 }
 
+function StudentPhaseGuide({ phase, submitted, inputOpen }) {
+  const guide = getLessonPhaseGuide(phase);
+  const waitingMessage = submitted
+    ? "제출은 완료되었습니다. 다른 모둠이 마칠 때까지 발표에 쓸 이유를 정리하세요."
+    : inputOpen
+      ? "지금은 선택하고 제출하는 시간입니다. 선택 이유를 말로 확인한 뒤 제출하세요."
+      : "지금은 토론과 해석의 시간입니다. 화면을 읽고 모둠 의견을 먼저 맞추세요.";
+
+  return (
+    <section className="student-phase-guide panel mt-5">
+      <div>
+        <p className="panel-label">지금 할 일</p>
+        <h2 className="panel-heading mt-1">{guide.title}</h2>
+        <p className="student-phase-guide-task">{guide.studentTask}</p>
+      </div>
+      <div className="student-phase-guide-side">
+        <p>{waitingMessage}</p>
+        <strong>{guide.prompt}</strong>
+      </div>
+    </section>
+  );
+}
 function PresentationStepCard({ label, children, prompt }) {
   return (
     <div className="presentation-card-item">
@@ -528,6 +586,7 @@ export default function StudentApp({
         </div>
       </header>
 
+      <StudentPhaseGuide phase={phase} submitted={submitted} inputOpen={inputOpen} />
       <FutureSelfCard group={group} phase={phase} />
       <StudentInsightCards result={visibleResult} />
       <EventCards cards={visibleResult?.eventCards ?? []} />
