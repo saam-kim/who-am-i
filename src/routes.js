@@ -1,4 +1,4 @@
-const githubPagesPath = "/constitution-game-react/";
+const githubPagesPath = "/who-am-i/";
 
 const isGitHubPagesHost = () =>
   typeof window !== "undefined" &&

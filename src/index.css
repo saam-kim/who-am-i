@@ -7,45 +7,46 @@
 
 /* ─────────────────────────────────────────────────────────────
    Who am I · 시민 카드 (Citizen Cards)
-   Forest green + mustard + terracotta on warm paper-cream.
-   Civic-document feel; serif-led; collectible card metaphor.
+   Dark navy + warm amber — BOOONG CLASSROOM dark theme.
    ───────────────────────────────────────────────────────────── */
 
 :root {
-  /* Background paper */
-  --color-bg: #f7efe1;
-  --color-bg-soft: #f0e6cf;
-  --color-bg-sidebar: #fbf2dd;
-  --color-surface: #fffaf0;
-  --color-paper: #fbf2dd;
+  /* Background — dark navy with clear depth hierarchy */
+  --color-bg: #0c1826;
+  --color-bg-soft: #091420;
+  --color-bg-sidebar: #0e1e30;
+  --color-surface: #16284a;
+  --color-paper: #102038;
 
-  /* Ink + neutrals */
-  --color-text: #1d1a17;
-  --color-text-soft: #3c342a;
-  --color-text-muted: #7a6a55;
-  --color-text-faint: #a99880;
-  --color-border: #e2d5b8;
-  --color-border-strong: #cdb98c;
-  --color-border-deep: #1d1a17;
+  /* Text — light on dark, strong contrast hierarchy */
+  --color-text: #eef3fc;
+  --color-text-soft: #bacde6;
+  --color-text-muted: #6e90b0;
+  --color-text-faint: #3e5870;
+  --color-border: #1e3454;
+  --color-border-strong: #2c4870;
+  --color-border-deep: #4a78b0;
 
-  /* Forest (primary) */
-  --color-brand: #1e4a3a;
-  --color-brand-deep: #16352a;
-  --color-brand-soft: #e7efe7;
-  --color-brand-ink: #1e4a3a;
+  /* Blue primary */
+  --color-brand: #3b7de8;
+  --color-brand-deep: #2358c0;
+  --color-brand-soft: #152a50;
+  --color-brand-ink: #3b7de8;
 
-  /* Accents */
-  --color-mustard: #d9a441;
-  --color-mustard-soft: #f3c768;
-  --color-mustard-bg: #fbf0d4;
-  --color-terra: #c25c4a;
-  --color-terra-soft: #e58769;
-  --color-terra-bg: #fbe6dc;
+  /* Muted gold accent (mustard 역할 — 핵심 수치 강조, 절제된 골드) */
+  --color-mustard: #a06c14;
+  --color-mustard-soft: #c8900e;
+  --color-mustard-bg: #14100a;
 
-  /* Status callout palette (kept for callout components) */
-  --color-case-bg: #e8f0e6;
-  --color-case-border: #2f6b53;
-  --color-case-text: #16352a;
+  /* Muted terracotta (terra 역할 — 레이블, 경고, 장식) */
+  --color-terra: #b05848;
+  --color-terra-soft: #c87060;
+  --color-terra-bg: #180c0a;
+
+  /* Status callout palette */
+  --color-case-bg: #0a2818;
+  --color-case-border: #22c55e;
+  --color-case-text: #86efac;
 
   /* Typography */
   --font-display: "Black Han Sans", sans-serif;
@@ -59,12 +60,12 @@
   --radius-lg: 6px;
   --radius-pill: 999px;
 
-  /* Shadows — hard, document-like */
-  --shadow-sm: 2px 2px 0 var(--color-border-strong);
-  --shadow-md: 3px 3px 0 var(--color-border-strong);
-  --shadow-deep: 4px 4px 0 var(--color-border-deep);
-  --shadow-soft: 0 22px 36px -28px rgba(29, 26, 23, 0.35);
-  --shadow-hover: 0 18px 28px -22px rgba(29, 26, 23, 0.4);
+  /* Shadows — soft blur + subtle rim in dark mode */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-deep: 0 8px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-soft: 0 22px 36px -28px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 18px 28px -22px rgba(0, 0, 0, 0.6);
 
   /* Animation */
   --ease-out-smooth: cubic-bezier(0.23, 1, 0.32, 1);
@@ -78,8 +79,11 @@ body,
 
 body {
   margin: 0;
-  background:
-    repeating-linear-gradient(0deg, var(--color-bg) 0px, var(--color-bg) 38px, #f4e9d2 38px, #f4e9d2 39px);
+  background-color: var(--color-bg);
+  background-image:
+    linear-gradient(rgba(44, 80, 150, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(44, 80, 150, 0.1) 1px, transparent 1px);
+  background-size: 44px 44px;
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: 18px;
@@ -103,6 +107,7 @@ button {
 
 button:active:not(:disabled) {
   transform: translate(1px, 1px);
+  filter: brightness(0.88);
 }
 
 /* ─── Page shells ─────────────────────────────────────────── */
@@ -187,16 +192,17 @@ button:active:not(:disabled) {
 }
 
 .button-primary {
-  border: 1.5px solid var(--color-border-deep);
-  background: var(--color-text);
-  color: var(--color-mustard-soft);
-  box-shadow: 3px 3px 0 var(--color-brand);
+  border: 1.5px solid var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(59, 125, 232, 0.35);
 }
 
 .button-primary:hover:not(:disabled) {
-  background: var(--color-brand);
-  color: var(--color-mustard-soft);
-  box-shadow: 4px 4px 0 var(--color-text);
+  background: var(--color-brand-deep);
+  color: #fff;
+  border-color: var(--color-brand-deep);
+  box-shadow: 0 6px 20px rgba(59, 125, 232, 0.45);
 }
 
 .button-secondary {
@@ -277,10 +283,10 @@ button:active:not(:disabled) {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  border-bottom: 3px solid var(--color-mustard-soft);
-  background: var(--color-text);
+  border-bottom: 2px solid var(--color-border-strong);
+  background: #060d18;
   padding: 16px 30px;
-  color: var(--color-mustard-soft);
+  color: var(--color-text-soft);
 }
 
 .dashboard-header .brand-title {
@@ -315,31 +321,31 @@ button:active:not(:disabled) {
   overflow-wrap: anywhere;
 }
 
-/* Buttons inside dashboard header lighten */
+/* Buttons inside dashboard header */
 .dashboard-header .button-secondary {
   background: transparent;
-  border-color: rgba(243, 199, 104, 0.5);
-  color: var(--color-mustard-soft);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-soft);
 }
 .dashboard-header .button-secondary:hover:not(:disabled) {
-  background: rgba(243, 199, 104, 0.1);
-  border-color: var(--color-mustard-soft);
-  color: var(--color-mustard-soft);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-border-deep);
+  color: var(--color-text);
 }
 
 /* "제출 현황" pill on the right of dashboard-header */
 .dashboard-header > div:last-child > .text-right {
   padding: 6px 18px;
-  background: var(--color-mustard);
+  background: var(--color-brand);
   border-radius: var(--radius);
-  color: var(--color-text);
+  color: #fff;
 }
 .dashboard-header > div:last-child > .text-right .panel-label {
-  color: var(--color-text);
+  color: rgba(255, 255, 255, 0.75);
   font-weight: 900;
 }
 .dashboard-header > div:last-child > .text-right p:last-child {
-  color: var(--color-text);
+  color: #fff;
   font-family: var(--font-display);
   font-weight: 400;
 }
@@ -602,7 +608,7 @@ button:active:not(:disabled) {
   min-width: 0;
   border-radius: var(--radius);
   background: var(--color-brand);
-  color: var(--color-mustard-soft);
+  color: #fff;
   padding: 3px 12px;
   font-family: var(--font-sans);
   font-size: 11px;
@@ -641,8 +647,8 @@ button:active:not(:disabled) {
 .value-pill {
   min-width: 150px;
   border-radius: var(--radius);
-  background: var(--color-text);
-  color: var(--color-mustard-soft);
+  background: var(--color-brand);
+  color: #fff;
   padding: 10px 18px;
   text-align: center;
   font-family: var(--font-display);
@@ -690,7 +696,7 @@ button:active:not(:disabled) {
   border-radius: var(--radius);
   background: var(--color-terra-bg);
   padding: 16px 18px;
-  color: #7a1020;
+  color: #fca5a5;
   font-family: var(--font-serif);
   font-weight: 700;
 }
@@ -732,7 +738,7 @@ button:active:not(:disabled) {
 }
 
 .data-table tr.active {
-  background: rgba(30, 74, 58, 0.08);
+  background: rgba(37, 99, 235, 0.12);
   color: var(--color-text);
 }
 
@@ -817,7 +823,7 @@ button:active:not(:disabled) {
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 0;
   background:
-    linear-gradient(135deg, #1e4a3a 0%, #16352a 100%);
+    linear-gradient(135deg, #1a3870 0%, #0d2050 100%);
   color: #fff;
   position: relative;
 }
@@ -833,7 +839,7 @@ button:active:not(:disabled) {
   padding: 24px;
   /* Decorative dot pattern recalling tarot card backs */
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(243, 199, 104, 0.35) 1px, transparent 1.5px);
+    radial-gradient(circle at 50% 50%, rgba(200, 144, 14, 0.35) 1px, transparent 1.5px);
   background-size: 14px 14px;
   background-position: 7px 7px;
 }
@@ -862,7 +868,7 @@ button:active:not(:disabled) {
   place-items: center;
   border: 1.5px solid var(--color-mustard-soft);
   border-radius: var(--radius);
-  background: rgba(22, 53, 42, 0.5);
+  background: rgba(8, 18, 50, 0.6);
   backdrop-filter: blur(2px);
   color: var(--color-mustard-soft);
   padding: 24px;
@@ -888,7 +894,7 @@ button:active:not(:disabled) {
 /* ─── Future-self card (revealed) ──────────────────────────── */
 
 .future-card {
-  background: linear-gradient(135deg, #1e4a3a 0%, #2f6b53 100%);
+  background: linear-gradient(135deg, #1a3870 0%, #2040a0 100%);
   color: #fff;
   display: block;
   padding: 30px 32px 32px;
@@ -912,8 +918,8 @@ button:active:not(:disabled) {
 }
 
 .future-card .metric-card {
-  background: rgba(217, 164, 65, 0.18);
-  border-color: rgba(243, 199, 104, 0.45);
+  background: rgba(217, 119, 6, 0.18);
+  border-color: rgba(251, 191, 36, 0.4);
   color: var(--color-mustard-soft);
 }
 
@@ -928,7 +934,7 @@ button:active:not(:disabled) {
 }
 
 .future-card .status-callout {
-  background: rgba(22, 53, 42, 0.6);
+  background: rgba(8, 18, 50, 0.6);
   border-left-color: var(--color-mustard-soft);
   color: #fff;
 }
@@ -938,7 +944,7 @@ button:active:not(:disabled) {
 }
 
 .future-card .info-callout {
-  background: rgba(217, 164, 65, 0.18);
+  background: rgba(217, 119, 6, 0.15);
   border-left-color: var(--color-mustard-soft);
   color: var(--color-mustard-soft);
 }
@@ -979,7 +985,7 @@ button:active:not(:disabled) {
 }
 
 .event-card.good    .event-card-label { color: var(--color-case-border); }
-.event-card.mixed   .event-card-label { color: #8a6a16; }
+.event-card.mixed   .event-card-label { color: #fbbf24; }
 
 .event-card h3 {
   margin: 10px 0 12px;
@@ -1008,7 +1014,7 @@ button:active:not(:disabled) {
 }
 
 .event-card.good    strong { color: var(--color-case-border); }
-.event-card.mixed   strong { color: #8a6a16; }
+.event-card.mixed   strong { color: #fbbf24; }
 
 .event-section-header {
   display: grid;
@@ -1182,8 +1188,8 @@ button:active:not(:disabled) {
 }
 
 .control-card .value-pill {
-  background: var(--color-text);
-  color: var(--color-mustard-soft);
+  background: var(--color-brand);
+  color: #fff;
 }
 
 .range-row {
@@ -1737,7 +1743,7 @@ button:active:not(:disabled) {
 
 .wrapup-card-rust  .wrapup-icon { background: var(--color-terra-bg);   color: var(--color-terra); }
 .wrapup-card-green .wrapup-icon { background: var(--color-case-bg);    color: var(--color-case-border); }
-.wrapup-card-gold  .wrapup-icon { background: var(--color-mustard-bg); color: #8a6a16; }
+.wrapup-card-gold  .wrapup-icon { background: var(--color-mustard-bg); color: #fbbf24; }
 
 .wrapup-card ul {
   display: grid;
@@ -1781,13 +1787,13 @@ button:active:not(:disabled) {
   place-items: center;
   gap: 2px;
   margin: 0;
-  border: 1.5px solid var(--color-border-deep);
+  border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius);
-  background: var(--color-text);
+  background: #060d18;
   padding: 14px 24px;
   text-align: center;
   box-shadow: var(--shadow-sm);
-  color: var(--color-mustard-soft);
+  color: var(--color-text-soft);
 }
 
 .wrapup-quote p {
@@ -1795,7 +1801,7 @@ button:active:not(:disabled) {
   font-family: var(--font-serif);
   font-size: 30px;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text);
   letter-spacing: -0.01em;
 }
 
@@ -2087,7 +2093,7 @@ button:active:not(:disabled) {
 .guide-simulation-section {
   border-color: var(--color-brand);
   background:
-    linear-gradient(180deg, rgba(255, 250, 240, 0.96), rgba(251, 242, 221, 0.96));
+    linear-gradient(180deg, rgba(14, 28, 52, 0.98), rgba(10, 20, 40, 0.98));
 }
 
 .lesson-coach-header,

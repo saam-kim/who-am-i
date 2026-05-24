@@ -6,7 +6,7 @@
 
 ## 배포 주소
 
-[https://saam-kim.github.io/constitution-game-react/](https://saam-kim.github.io/constitution-game-react/)
+[https://saam-kim.github.io/who-am-i/](https://saam-kim.github.io/who-am-i/)
 
 GitHub Pages에서는 새로고침 404 오류를 피하기 위해 해시 라우팅을 사용합니다.
 
