@@ -779,7 +779,7 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
                 </span>
               )}
             </div>
-            <h1 className="text-base font-bold font-serif leading-none mt-0.5">
+            <h1 className="text-base font-bold font-serif leading-none mt-0.5 text-white">
               정의로운 사회 설계 세션 (PIN: <span className="font-sans text-accent tracking-wider font-extrabold text-lg">{pin}</span>)
             </h1>
           </div>

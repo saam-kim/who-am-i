@@ -10,6 +10,10 @@ export default {
           soft: "#dde7ff",
           ink: "#061654",
         },
+        accent: {
+          DEFAULT: "#ffd13a",
+          soft: "#fff4c2",
+        },
         midnight: "#0a1740",
         surface: {
           DEFAULT: "#ffffff",
