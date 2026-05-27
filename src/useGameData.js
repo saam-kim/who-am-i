@@ -12,10 +12,10 @@ import { database, isFirebaseConfigured } from "./firebase";
 
 export const SESSION_PHASES = [
   { key: "discussion", label: "토론", note: "모둠 입장과 쟁점 확인", durationSeconds: 5 * 60 },
-  { key: "constitution", label: "1차 설계", note: "정책 선택과 제출", durationSeconds: 3 * 60 },
+  { key: "constitution", label: "1차 설계", note: "정책 선택과 제출", durationSeconds: 5 * 60 },
   { key: "result", label: "역할 공개", note: "미래의 나와 생활 모습 확인", durationSeconds: 5 * 60 },
   { key: "secondDiscussion", label: "2차 토론", note: "역할과 사건을 바탕으로 재토론", durationSeconds: 5 * 60 },
-  { key: "revision", label: "2차 설계", note: "수정한 정책 선택과 제출", durationSeconds: 3 * 60 },
+  { key: "revision", label: "2차 설계", note: "수정한 정책 선택과 제출", durationSeconds: 4 * 60 },
   { key: "final", label: "설계 과정 및 결과 발표", note: "수정한 사회 설계 비교와 발표", durationSeconds: 15 * 60 }
 ];
 
@@ -225,6 +225,15 @@ const stddev = values => {
   return Math.sqrt(variance);
 };
 
+const shuffleArray = (array) => {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
 const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialIntegration }) => {
   const taxPolicy = getTaxPolicy(constitution);
   const taxRate = Number(taxPolicy.taxRate);
@@ -232,10 +241,10 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   const welfareBudget = Number(budgetDirection.welfareBudget);
   const wagePolicy = getWagePolicy(constitution);
   const minimumWage = Number(wagePolicy.minimumWage);
-  const cards = [];
+  const triggeredCards = [];
 
   if (budgetDirection.key === "growth") {
-    cards.push({
+    triggeredCards.push({
       type: "warning",
       title: "일자리는 늘었지만 안전망 논쟁이 커졌습니다",
       body:
@@ -245,7 +254,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (budgetDirection.key === "basic") {
-    cards.push({
+    triggeredCards.push({
       type: "good",
       title: "최소 생활 보장이 두꺼워졌습니다",
       body:
@@ -255,7 +264,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (budgetDirection.key === "opportunity") {
-    cards.push({
+    triggeredCards.push({
       type: "mixed",
       title: "교육과 직업훈련 예산이 늘었습니다",
       body:
@@ -265,7 +274,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (taxRate >= 55) {
-    cards.push({
+    triggeredCards.push({
       type: "warning",
       title: "고소득층의 조세 저항이 커졌습니다",
       body:
@@ -275,7 +284,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (taxRate <= 18) {
-    cards.push({
+    triggeredCards.push({
       type: "warning",
       title: "공공 서비스 예산이 부족해졌습니다",
       body:
@@ -285,7 +294,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (minimumWage >= 13500) {
-    cards.push({
+    triggeredCards.push({
       type: "mixed",
       title: "노동자의 생활 안정이 높아졌지만 고용 부담도 커졌습니다",
       body:
@@ -295,7 +304,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (minimumWage <= 9500) {
-    cards.push({
+    triggeredCards.push({
       type: "warning",
       title: "저임금 노동자의 생활 불안이 커졌습니다",
       body:
@@ -305,7 +314,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (socialIntegration < 55) {
-    cards.push({
+    triggeredCards.push({
       type: "warning",
       title: "시민 사이의 갈등이 커졌습니다",
       body:
@@ -315,7 +324,7 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
   }
 
   if (survivalIndex >= 78 && socialIntegration >= 68 && assetGrowth >= -15) {
-    cards.push({
+    triggeredCards.push({
       type: "good",
       title: "대체로 안정적인 사회 합의가 만들어졌습니다",
       body:
@@ -355,20 +364,26 @@ const buildEventCards = ({ constitution, survivalIndex, assetGrowth, socialInteg
     }
   ];
 
-  supplementalCards.forEach((supplementalCard) => {
-    if (cards.length < 3 && !cards.some((card) => card.title === supplementalCard.title)) {
-      cards.push(supplementalCard);
+  // Shuffle the triggered cards and supplemental cards separately
+  const shuffledTriggered = shuffleArray(triggeredCards);
+  const shuffledSupplemental = shuffleArray(supplementalCards);
+
+  const finalCards = [...shuffledTriggered];
+
+  shuffledSupplemental.forEach((supplementalCard) => {
+    if (finalCards.length < 3 && !finalCards.some((card) => card.title === supplementalCard.title)) {
+      finalCards.push(supplementalCard);
     }
   });
 
-  while (cards.length < 3) {
-    cards.push({
-      ...supplementalCards[cards.length % supplementalCards.length],
-      title: `추가 점검 ${cards.length + 1}`
+  while (finalCards.length < 3) {
+    finalCards.push({
+      ...shuffledSupplemental[finalCards.length % shuffledSupplemental.length],
+      title: `추가 점검 ${finalCards.length + 1}`
     });
   }
 
-  return cards.slice(0, 3);
+  return finalCards.slice(0, 3);
 };
 
 const readLocalSessions = () => {
@@ -1139,3 +1154,35 @@ export function useGameData(pin, groupId = null) {
     runRoulette
   };
 }
+
+export const SUBMIT_CHECKS_INTRO = "아래 3가지를 모두 점검해야 제출됩니다. 모둠에서 합의하세요.";
+
+export const getStepCopy = (phase) => {
+  const copies = {
+    discussion: {
+      student: "모둠원들과 상의해 공정한 사회 설계의 방향을 토론해 보세요.",
+      teacher: "학생들에게 역할이 감춰진 베일 뒤의 조건을 일러주고 토론을 유도하세요."
+    },
+    constitution: {
+      student: "의견이 일치한 정책들을 고르고, 체크리스트를 점검해 제출하세요.",
+      teacher: "모든 모둠이 성실히 제출할 수 있도록 제출 여부를 주시해 주세요."
+    },
+    result: {
+      student: "베일이 걷혔습니다. 공개된 내 역할과 생활 조건을 상세히 읽어보세요.",
+      teacher: "모둠을 돌며 베일을 걷어주고, 학생들이 바뀐 처지를 느끼게 하세요."
+    },
+    secondDiscussion: {
+      student: "사건 카드 뉴스를 바탕으로 우리 사회가 여전히 공정한지 재토론하세요.",
+      teacher: "특정 집단에 부담이 과중되었는지 질문을 던져 성찰하게 하세요."
+    },
+    revision: {
+      student: "바꿀 정책은 수정하고, 유지할 정책은 그대로 제출하세요.",
+      teacher: "판단을 번복한 모둠에게 그 이유(공정함의 근거)를 물어보세요."
+    },
+    final: {
+      student: "우리 모둠의 사회 설계 특징과 변화 이유를 발표하세요.",
+      teacher: "역할별 비교 보드를 참고하여 모둠별 발표를 이끌어 주세요."
+    }
+  };
+  return copies[phase] ?? copies.discussion;
+};

@@ -10,33 +10,12 @@ import {
   useGameData
 } from "./useGameData";
 import { getLessonPhaseGuide } from "./lessonFlow";
-
-const formatTime = seconds => {
-  const m = String(Math.floor(seconds / 60)).padStart(2, "0");
-  const s = String(seconds % 60).padStart(2, "0");
-  return `${m}:${s}`;
-};
-
-const getPhaseLabel = phase =>
-  SESSION_PHASES.find(item => item.key === phase)?.label ?? "토론";
-
-const POLICY_INFO = {
-  taxRate: {
-    title: "세금 정책 방향",
-    body:
-      "세금을 낮게 둘지, 모두가 넓게 부담할지, 소득이 높은 사람이 더 책임질지 정합니다. 자유와 공동체 책임을 함께 따져 보세요."
-  },
-  welfareBudget: {
-    title: "국가 예산 방향",
-    body:
-      "국가 예산을 성장, 기본 생활 보장, 기회 투자 중 어디에 우선 둘지 정합니다. 자유로운 경제 활동과 평등한 출발 조건을 함께 따져 보세요."
-  },
-  minimumWage: {
-    title: "최저임금 방향",
-    body:
-      "임금을 시장에 더 맡길지, 천천히 올릴지, 기본 생활을 보장할 만큼 높게 둘지 정합니다. 일자리 기회와 생활 안정을 함께 보세요."
-  }
-};
+import BrandMark from "./components/BrandMark";
+import Stepper from "./components/Stepper";
+import Timer from "./components/Timer";
+import PolicyChoiceCard from "./components/PolicyChoiceCard";
+import FutureSelfCard from "./components/FutureSelfCard";
+import EventCard from "./components/EventCard";
 
 const SUBMIT_CHECKS = [
   "가장 불리한 위치에 태어나도 받아들일 수 있는 규칙인가요?",
@@ -45,39 +24,43 @@ const SUBMIT_CHECKS = [
 ];
 
 const formatTaxPolicy = constitution => getTaxPolicy(constitution).label;
-
-const formatBudgetDirection = constitution =>
-  getBudgetDirection(constitution).label;
-
+const formatBudgetDirection = constitution => getBudgetDirection(constitution).label;
 const formatWagePolicy = constitution => getWagePolicy(constitution).label;
+
+const DISCUSSION_CARDS = [
+  {
+    title: "무지의 베일 뒤에 서기",
+    body: "내가 내일 아침 눈을 떴을 때, 어떤 계층(부자, 보통 사람, 가난한 사람)으로 살아가게 될지 전혀 알 수 없다면, 어떤 세상의 원칙을 세우겠습니까?",
+    prompt: "내 이익이 아니라 '누구나 동의할 수 있는' 규칙을 고민해 봅니다."
+  },
+  {
+    title: "세금과 예산의 딜레마",
+    body: "세금을 줄여 개인의 자유로운 경제 활동을 촉진하고 일자리를 늘릴 것인가, 아니면 복지 예산을 늘려 최저 생활 안전망을 보장할 것인가?",
+    prompt: "각 선택이 불러올 긍정적 측면과 부정적 그늘을 비교 토론합니다."
+  },
+  {
+    title: "최저임금의 양날의 검",
+    body: "시장에 맡겨 더 많은 일자리 기회를 우선시할 것인가, 아니면 일하는 사람이 인간다운 품위를 지킬 수 있도록 높은 시급을 보장할 것인가?",
+    prompt: "노동자와 작은 가게 사장님의 입장을 함께 고민해 봅니다."
+  }
+];
 
 function PolicySummary({ constitution }) {
   return (
-    <ul className="policy-summary-list">
-      <li>
-        <span>세금</span>: {formatTaxPolicy(constitution)}
+    <ul className="space-y-2 text-sm font-serif">
+      <li className="flex items-center gap-2">
+        <span className="font-bold text-brand">• 세금:</span> 
+        <span className="text-gray-700">{formatTaxPolicy(constitution)}</span>
       </li>
-      <li>
-        <span>예산 방향</span>: {formatBudgetDirection(constitution)}
+      <li className="flex items-center gap-2">
+        <span className="font-bold text-brand">• 예산 방향:</span> 
+        <span className="text-gray-700">{formatBudgetDirection(constitution)}</span>
       </li>
-      <li>
-        <span>최저임금</span>: {formatWagePolicy(constitution)}
+      <li className="flex items-center gap-2">
+        <span className="font-bold text-brand">• 최저임금:</span> 
+        <span className="text-gray-700">{formatWagePolicy(constitution)}</span>
       </li>
     </ul>
-  );
-}
-
-function PolicyInfo({ item }) {
-  return (
-    <div className="info-callout">
-      <div className="font-extrabold text-brand">?</div>
-      <div>
-        <p className="font-black">{item.title}</p>
-        <p className="info-callout-body mt-1">
-          {item.body}
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -162,89 +145,28 @@ function StudentInsightCards({ result }) {
   if (!insights.length) return null;
 
   return (
-    <section className="panel mt-6">
-      <p className="panel-label">{"우리 선택이 만든 결과"}</p>
-      <h2 className="panel-heading mt-1">{"1차 설계 결과 살펴보기"}</h2>
-      <p className="student-insight-intro">{"우리 선택이 만든 사회를 세 가지 기준으로 읽어 봅니다. 점수가 아니라, 누구의 삶이 안정되고 누구에게 부담이 생기는지 살펴보세요."}</p>
-      <div className="student-insight-grid mt-5">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl mt-8">
+      <div className="border-b border-gray-100 pb-4 mb-4">
+        <p className="panel-label">우리 선택이 만든 결과</p>
+        <h2 className="panel-heading text-xl mt-1">1차 설계 결과 살펴보기</h2>
+        <p className="text-gray-500 text-sm mt-1 font-serif">
+          우리 선택이 만든 사회를 세 가지 기준으로 읽어 봅니다. 점수가 아니라, 누구의 삶이 안정되고 누구에게 부담이 생기는지 살펴보세요.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {insights.map(insight => (
-          <article key={insight.title} className="interpretation-card student-insight-card">
-            <p className="panel-label">{insight.title}</p>
-            <h3>{insight.status}</h3>
-            <p>{insight.body}</p>
-            <strong>{insight.question}</strong>
+          <article key={insight.title} className="p-5 border border-gray-100 bg-gray-50/50 rounded-2xl flex flex-col justify-between">
+            <div>
+              <span className="chip chip-cobalt text-[10px] px-2 py-0.5 font-bold mb-3">{insight.title}</span>
+              <h3 className="text-base font-bold text-brand-ink mb-2 leading-snug">{insight.status}</h3>
+              <p className="text-gray-600 text-xs leading-relaxed font-serif mb-4">{insight.body}</p>
+            </div>
+            <strong className="text-xs text-brand leading-snug font-serif pt-3 border-t border-dashed border-gray-200">
+              Q. {insight.question}
+            </strong>
           </article>
         ))}
       </div>
-    </section>
-  );
-}
-
-function FutureSelfCard({ group, phase }) {
-  const futureSelf = group?.assignedClass;
-  const result = group?.result ?? group?.history?.[0]?.result;
-  const revealed = Boolean(futureSelf);
-
-  if (!revealed) {
-    return (
-      <section className="veil-card">
-        <div>
-          <p className="panel-label">{"\ubb34\uc9c0\uc758 \ubca0\uc77c"}</p>
-          <h2 className="panel-heading mt-1">{"\uc544\uc9c1 \uc6b0\ub9ac\ub294 \ub204\uad6c\uc778\uc9c0 \ubaa8\ub985\ub2c8\ub2e4"}</h2>
-          <p className="mt-3 text-lg leading-8 text-[var(--color-text)]">
-            {"\ub0b4\uac00 \uc5b4\ub5a4 \uc704\uce58\uc5d0\uc11c \uc0b4\uac8c \ub420\uc9c0 \ubaa8\ub974\ub294 \uc0c1\ud0dc\uc5d0\uc11c \ubaa8\ub450\uac00 \ubc1b\uc544\ub4e4\uc77c \uc218 \uc788\ub294 \uc0ac\ud68c \uc6d0\uce59\uc744 \uc815\ud574 \ubcf4\uc138\uc694."}
-          </p>
-        </div>
-        <div className="veil-question">
-          {"\ub0b4\uac00 \uac00\uc7a5 \ubd88\ub9ac\ud55c \uc704\uce58\uc5d0 \ud0dc\uc5b4\ub098\ub3c4 \uc774 \uaddc\uce59\uc744 \ubc1b\uc544\ub4e4\uc77c \uc218 \uc788\uc744\uae4c?"}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="future-card">
-      <div>
-        <p className="panel-label">{"\ubca0\uc77c\uc774 \uac77\ud614\uc2b5\ub2c8\ub2e4"}</p>
-        <h2 className="panel-heading mt-1">{futureSelf.label}</h2>
-        <p className="mt-3 text-lg font-bold text-[var(--color-text)]">
-          {futureSelf.headline ?? "공개된 역할에서 사회 제도의 영향을 다시 살펴보세요."}
-        </p>
-        <p className="mt-3 text-lg leading-8 text-[var(--color-text)]">
-          {futureSelf.situation ??
-            "이 역할의 시민에게 세금, 예산, 최저임금 선택이 어떤 이익과 부담을 만드는지 토론해 보세요."}
-        </p>
-      </div>
-
-      <div className="mt-5">
-        <div className="metric-card">
-          <p className="panel-label">{"내가 특히 따져볼 기준"}</p>
-          <p className="mt-2 font-bold">
-            {futureSelf.priority ?? "\uc0dd\ud65c \uc548\uc815, \uae30\ud68c, \uacf5\uc815\ud55c \ubd80\ub2f4"}
-          </p>
-        </div>
-      </div>
-
-      {result && (
-        <div className="status-callout mt-5">
-          <p className="font-black">{"내 역할에서 바라본 1차 설계"}</p>
-          <p className="mt-2 leading-7">
-            {result.classResult.message}
-          </p>
-        </div>
-      )}
-
-      {(phase === "secondDiscussion" || phase === "revision") && (
-        <div className="info-callout mt-5">
-          <div className="font-extrabold text-brand">?</div>
-          <div>
-            <p className="font-black">{"2\ucc28 \ud1a0\ub860"}</p>
-            <p className="info-callout-body mt-1">
-              {"역할과 사건 카드를 바탕으로 처음 만든 사회 설계가 정말 공정했는지 검토하세요."}
-            </p>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
@@ -253,24 +175,19 @@ function EventCards({ cards = [] }) {
   if (!cards.length) return null;
 
   return (
-    <section className="panel mt-6">
-      <div className="event-section-header">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl mt-8">
+      <div className="border-b border-gray-100 pb-4 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <p className="panel-label">{"\uc624\ub298\uc758 \uc0ac\ud68c \ub274\uc2a4"}</p>
-          <h2 className="panel-heading mt-1">{"\uc6b0\ub9ac \uc0ac\ud68c \uc124\uacc4\uac00 \ub9cc\ub4e0 \uc0ac\uac74"}</h2>
+          <p className="panel-label">오늘의 사회 뉴스</p>
+          <h2 className="panel-heading text-xl mt-1">우리 사회 설계가 만든 사건</h2>
         </div>
-        <div className="event-reflection-callout">
-          {"내 역할 말고 다른 시민 한 명을 골라 보세요. 그 시민도 이 사회를 공정하다고 느낄 수 있을까요?"}
+        <div className="text-xs font-serif text-gray-500 bg-brand-soft/50 border border-brand/10 px-3.5 py-2 rounded-xl max-w-sm">
+          내 역할 말고 다른 시민 한 명을 골라 보세요. 그 시민도 이 사회를 공정하다고 느낄 수 있을까요?
         </div>
       </div>
-      <div className="event-grid mt-5">
+      <div className="event-grid">
         {cards.map((card, index) => (
-          <article key={`${card.title}-${index}`} className={`event-card ${card.type ?? "mixed"}`}>
-            <p className="event-card-label">사건 {index + 1}</p>
-            <h3>{card.title}</h3>
-            <p>{card.body}</p>
-            <strong>{card.question}</strong>
-          </article>
+          <EventCard key={`${card.title}-${index}`} card={card} index={index} />
         ))}
       </div>
     </section>
@@ -286,42 +203,35 @@ function StudentPhaseGuide({ phase, submitted, inputOpen }) {
       : "지금은 토론과 해석의 시간입니다. 화면을 읽고 모둠 의견을 먼저 맞추세요.";
 
   return (
-    <section className="student-phase-guide panel mt-5">
-      <div>
+    <section className="p-6 bg-brand-soft/30 border border-brand/10 rounded-3xl flex flex-col md:flex-row justify-between gap-6">
+      <div className="max-w-xl">
         <p className="panel-label">지금 할 일</p>
-        <h2 className="panel-heading mt-1">{guide.title}</h2>
-        <p className="student-phase-guide-task">{guide.studentTask}</p>
+        <h2 className="text-xl font-bold text-brand-ink mt-1 font-serif">{guide.title}</h2>
+        <p className="text-gray-700 text-sm leading-relaxed mt-2 font-serif">{guide.studentTask}</p>
       </div>
-      <div className="student-phase-guide-side">
-        <p>{waitingMessage}</p>
-        <strong>{guide.prompt}</strong>
+      <div className="md:w-72 flex flex-col justify-between p-4 bg-white/70 border border-brand/5 rounded-2xl">
+        <p className="text-xs text-gray-600 font-serif leading-normal">{waitingMessage}</p>
+        <strong className="text-xs text-brand mt-2 leading-relaxed block font-serif">
+          ★ {guide.prompt}
+        </strong>
       </div>
     </section>
   );
 }
+
 function PresentationStepCard({ label, children, prompt }) {
   return (
-    <div className="presentation-card-item">
-      <div className="presentation-card-content">
+    <div className="p-5 border border-gray-100 bg-gray-50/50 rounded-2xl flex flex-col justify-between min-h-[220px]">
+      <div>
         <p className="panel-label">{label}</p>
-        {children}
+        <div className="mt-3">
+          {children}
+        </div>
       </div>
-      <div className="presentation-card-prompt">{prompt}</div>
+      <div className="mt-4 text-xs font-serif text-brand-ink bg-brand-soft px-3 py-2 rounded-xl border border-brand/10">
+        {prompt}
+      </div>
     </div>
-  );
-}
-
-function NewsSummary({ cards = [] }) {
-  if (!cards.length) {
-    return <p>{"\uc0ac\uac74 \uce74\ub4dc\uac00 \uacf5\uac1c\ub418\uba74 \ud55c \uac00\uc9c0\ub97c \uace8\ub77c \uc815\ub9ac\ud558\uc138\uc694."}</p>;
-  }
-
-  return (
-    <ul className="news-summary-list">
-      {cards.slice(0, 3).map((card, index) => (
-        <li key={`${card.title}-${index}`}>사건 {index + 1}: {card.title}</li>
-      ))}
-    </ul>
   );
 }
 
@@ -332,10 +242,10 @@ function PresentationCard({ group }) {
 
   if (!firstRound && !result) {
     return (
-      <section className="panel mt-6">
-        <p className="panel-label">{"발표 준비 카드"}</p>
-        <h2 className="panel-heading mt-1">{"우리 모둠 발표 흐름"}</h2>
-        <p className="status-callout mt-5 text-base">
+      <section className="panel p-6 bg-white border border-gray-200 rounded-3xl mt-8">
+        <p className="panel-label">발표 준비 카드</p>
+        <h2 className="panel-heading text-xl mt-1">우리 모둠 발표 흐름</h2>
+        <p className="status-callout mt-4 text-sm justify-center">
           1차 결과와 2차 설계가 쌓이면 발표에 사용할 카드가 이 화면에 표시됩니다.
         </p>
       </section>
@@ -343,34 +253,46 @@ function PresentationCard({ group }) {
   }
 
   return (
-    <section className="panel mt-6">
-      <p className="panel-label">{"\ubc1c\ud45c \uc900\ube44 \uce74\ub4dc"}</p>
-      <h2 className="panel-heading mt-1">{"\uc6b0\ub9ac \ubaa8\ub460 \ubc1c\ud45c \ud750\ub984"}</h2>
-      <div className="presentation-grid mt-5">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl mt-8 animate-fadeIn">
+      <div className="border-b border-gray-100 pb-4 mb-4">
+        <p className="panel-label">발표 준비 카드</p>
+        <h2 className="panel-heading text-xl mt-1 font-serif">우리 모둠 발표 흐름</h2>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <PresentationStepCard
-          label={"1\ucc28 \uc124\uacc4"}
-          prompt={"\uc65c \uc774 \uc120\ud0dd\uc744 \ud588\ub294\uc9c0, \ub2e4\ub978 \uc120\ud0dd\uc744 \ud558\uc9c0 \uc54a\uc740 \uc774\uc720\ub97c \uc124\uba85\ud558\uc138\uc694."}
+          label="1차 설계"
+          prompt="왜 이 선택을 했는지, 다른 선택을 하지 않은 이유를 설명하세요."
         >
           <PolicySummary constitution={firstRound?.constitution ?? group.constitution} />
         </PresentationStepCard>
 
         <PresentationStepCard
-          label={"\ubbf8\ub798\uc758 \ub098"}
-          prompt={"1\ucc28 \uc124\uacc4\uac00 \ub098\uc758 \uc0dd\ud65c\uc5d0 \uc5b4\ub5a4 \uc601\ud5a5\uc744 \uc8fc\uc5c8\ub294\uc9c0 \ub9d0\ud558\uc138\uc694."}
+          label="미래의 나"
+          prompt="1차 설계가 나의 생활에 어떤 영향을 주었는지 말하세요."
         >
-          <p>{group.assignedClass?.label ?? firstRound?.assignedClass?.label ?? "\uc544\uc9c1 \uacf5\uac1c \uc804"}</p>
+          <p className="font-bold text-gray-800 font-serif">
+            {group.assignedClass?.label ?? firstRound?.assignedClass?.label ?? "아직 공개 전"}
+          </p>
         </PresentationStepCard>
 
         <PresentationStepCard
-          label={"\uc624\ub298\uc758 \uc0ac\ud68c \ub274\uc2a4"}
-          prompt={"사건 하나를 골라, 이 사회가 누구에게 유리하고 불리한지 설명하세요."}
+          label="오늘의 사회 뉴스"
+          prompt="사건 하나를 골라, 이 사회가 누구에게 유리하고 불리한지 설명하세요."
         >
-          <NewsSummary cards={eventCards} />
+          <ul className="space-y-1.5 text-xs text-gray-600 font-serif">
+            {eventCards.slice(0, 3).map((card, index) => (
+              <li key={`${card.title}-${index}`} className="truncate">
+                • {card.title}
+              </li>
+            ))}
+            {eventCards.length === 0 && <li>사건 카드가 공개되면 정리하세요.</li>}
+          </ul>
         </PresentationStepCard>
 
         <PresentationStepCard
-          label={"2\ucc28 \uc124\uacc4"}
-          prompt={"\ub2ec\ub77c\uc9c4 \uc120\ud0dd\uc740 \ubb34\uc5c7\uc774\uace0 \uc65c \ubc14\uafb8\uc5c8\ub294\uc9c0, \uc720\uc9c0\ud55c \uc120\ud0dd\uc740 \uc65c \uc720\uc9c0\ud588\ub294\uc9c0 \uc124\uba85\ud558\uc138\uc694."}
+          label="2차 설계"
+          prompt="달라진 선택은 무엇이고 왜 바꾸었는지, 혹은 유지한 이유는 무엇인지 설명하세요."
         >
           <PolicySummary constitution={group.constitution} />
         </PresentationStepCard>
@@ -379,37 +301,59 @@ function PresentationCard({ group }) {
   );
 }
 
-
-function PolicyChoiceControl({ label, valueLabel, options, selectedKey, info, disabled, onChange }) {
+function PolicyChoiceControl({ 
+  label, 
+  valueLabel, 
+  options, 
+  selectedKey, 
+  disabled, 
+  onChange,
+  firstRoundKey,
+  isSecondConstitution
+}) {
   return (
-    <section className="control-card">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <h2 className="panel-heading">{label}</h2>
-        <div className="value-pill value-pill-text">
-          {valueLabel}
+    <section className="control-card p-6 bg-white border border-gray-200 rounded-3xl shadow-2">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-extrabold text-brand-ink">{label}</h2>
+          
+          {/* Causal/Revision badge */}
+          {isSecondConstitution && firstRoundKey && (
+            <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              1차 선택: {options.find(opt => opt.key === firstRoundKey)?.label || ""}
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {isSecondConstitution && (
+            selectedKey === firstRoundKey ? (
+              <span className="chip chip-cobalt text-[10px] px-2 py-0.5 font-bold">유지</span>
+            ) : (
+              <span className="chip chip-coral text-[10px] px-2 py-0.5 font-bold">변경됨</span>
+            )
+          )}
+          <div className="text-brand font-extrabold text-sm px-2.5 py-1 rounded bg-brand-soft">
+            {valueLabel}
+          </div>
         </div>
       </div>
 
-      <div className="choice-grid">
+      <div className="choice-grid grid grid-cols-1 md:grid-cols-3 gap-4">
         {options.map(option => {
           const active = option.key === selectedKey;
 
           return (
-            <button
+            <PolicyChoiceCard
               key={option.key}
-              type="button"
+              option={option}
+              active={active}
               disabled={disabled}
-              onClick={() => onChange(option)}
-              className={`choice-card ${active ? "active" : ""}`}
-            >
-              <span>{option.label}</span>
-              <small>{option.description}</small>
-            </button>
+              onSelect={onChange}
+            />
           );
         })}
       </div>
-
-      <PolicyInfo item={info} />
     </section>
   );
 }
@@ -423,6 +367,7 @@ export default function StudentApp({
 }) {
   const {
     group: liveGroup,
+    groups: allGroups,
     loading,
     phase,
     inputOpen,
@@ -441,6 +386,7 @@ export default function StudentApp({
     minimumWage: 11000
   });
   const [checkedItems, setCheckedItems] = useState([]);
+  const [checklistOpen, setChecklistOpen] = useState(true);
 
   useEffect(() => {
     if (!preview && !presentationOnly && !presentationExample) {
@@ -479,6 +425,43 @@ export default function StudentApp({
     constitution,
     history: []
   }), [constitution]);
+
+  const SAMPLE_PRESENTATION_GROUP = {
+    id: "group_sample",
+    name: "샘플 모둠",
+    connected: true,
+    isSubmitted: true,
+    assignedClass: {
+      label: "자영업자",
+      headline: "동네에서 음식점을 운영하는 모둠장 부모님",
+      situation: "최근 인상된 시급과 공공요금으로 운영에 많은 고민을 하십니다.",
+      priority: "운영 비용 절감, 임금 지원책, 안정적인 지역 상권 활성화"
+    },
+    constitution: {
+      taxPolicy: "shared",
+      taxRate: 35,
+      budgetDirection: "basic",
+      welfareBudget: 42,
+      wagePolicy: "gradual",
+      minimumWage: 11000
+    },
+    history: [
+      {
+        constitution: {
+          taxPolicy: "low",
+          taxRate: 18,
+          budgetDirection: "growth",
+          welfareBudget: 12,
+          wagePolicy: "market",
+          minimumWage: 9000
+        },
+        assignedClass: {
+          label: "자영업자"
+        }
+      }
+    ]
+  };
+
   const group = presentationExample ? SAMPLE_PRESENTATION_GROUP : preview ? previewGroup : liveGroup;
   const visibleResult = group?.result ?? group?.history?.[0]?.result;
   const submitted = Boolean(group?.isSubmitted);
@@ -503,6 +486,15 @@ export default function StudentApp({
     );
   }, [constitution, inputOpen, allChecked, preview, presentationOnly]);
 
+  // Count selection completeness
+  const selectionsMade = useMemo(() => {
+    let count = 0;
+    if (constitution.taxPolicy) count++;
+    if (constitution.budgetDirection) count++;
+    if (constitution.wagePolicy) count++;
+    return count;
+  }, [constitution]);
+
   const changeValue = async patch => {
     const next = { ...constitution, ...patch };
     setConstitution(next);
@@ -516,175 +508,318 @@ export default function StudentApp({
     await submitConstitution(constitution);
   };
 
+  // Submit counts for other groups
+  const submittedGroupsCount = useMemo(() => {
+    const list = Object.values(allGroups || {});
+    return list.filter(g => g.isSubmitted).length;
+  }, [allGroups]);
+
+  const totalGroupsCount = useMemo(() => {
+    return Object.keys(allGroups || {}).length;
+  }, [allGroups]);
+
   if (loading) {
     return (
-      <main className="center-page app-page text-3xl font-bold text-brand">
-        사회 설계 회의장에 입장 중
+      <main className="min-h-screen flex items-center justify-center bg-canvas text-xl font-bold text-brand font-serif">
+        <div className="flex flex-col items-center gap-4">
+          <BrandMark size="lg" className="animate-spin duration-[4000ms]" />
+          <span>사회 설계 회의장 입장 중...</span>
+        </div>
       </main>
     );
   }
 
   if (!group) {
     return (
-      <main className="center-page app-page p-6 text-center text-3xl font-bold text-red-700">
-        모둠 정보를 찾을 수 없습니다. 이미 모둠이 확정되었거나 PIN을 다시 확인해야 합니다.
+      <main className="min-h-screen flex items-center justify-center p-6 bg-canvas text-center font-serif">
+        <div className="max-w-md p-8 bg-white rounded-3xl border border-gray-200 shadow-2">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">모둠 정보를 찾을 수 없습니다</h2>
+          <p className="text-gray-600 leading-relaxed text-sm">
+            이미 모둠이 확정되었거나 PIN 번호가 맞지 않습니다. 교사에게 문의 후 다시 접속해 주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => { window.location.hash = ""; window.location.reload(); }}
+            className="button-secondary mt-6 h-12 px-6"
+          >
+            입장 화면으로 가기
+          </button>
+        </div>
       </main>
     );
   }
 
   if (presentationOnly) {
     return (
-      <main className="student-page presentation-page">
+      <main className="student-page max-w-5xl bg-canvas min-h-screen">
         <div className="student-content">
-          <header className="student-header presentation-header">
+          <header className="student-header border-b border-gray-200 pb-5 mb-8 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="brand-logo">붕</div>
+              <BrandMark size="lg" />
               <div>
                 <p className="brand-kicker">발표 자료</p>
-                <h1 className="brand-title">{group.name} 활동 발표</h1>
+                <h1 className="brand-title text-2xl font-serif">{group.name} 활동 발표</h1>
               </div>
             </div>
           </header>
-
           <PresentationCard group={group} />
         </div>
       </main>
     );
   }
 
+  // First round choices (history[0]) to render revision comparison badges
+  const firstRoundConstitution = group.history?.[0]?.constitution;
+
   return (
-    <main className="student-page">
-      <div className="student-content">
-      {preview && (
-        <section className="info-callout mb-5 text-base">
-          교사용 미리보기입니다. 이 화면에서는 학생 접속 기록이나 제출 기록이 바뀌지 않습니다.
-        </section>
-      )}
-
-      <header className="student-header">
-        <div className="flex items-center gap-4">
-          <div className="brand-logo">붕</div>
-          <div>
-            <p className="brand-kicker">공정한 사회 설계 회의</p>
-            <h1 className="brand-title">{group.name}</h1>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-6">
-          <div className="metric-card text-center">
-            <p className="panel-label">현재 단계</p>
-            <p className="text-3xl font-black text-brand">
-              {getPhaseLabel(phase)}
-            </p>
-          </div>
-          <div className="metric-card text-right">
-              <p className="panel-label">입력 마감</p>
-              <p className="font-sans text-5xl font-black text-brand tabular-nums">
-                {formatTime(remainingSeconds)}
+    <main className="bg-canvas min-h-screen">
+      
+      {/* Sticky header */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 py-4 px-6 shadow-1 select-none">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          {/* Logo & Group Details */}
+          <div className="flex items-center gap-3">
+            <BrandMark size="sm" />
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                정의로운 사회 설계 시뮬레이터
               </p>
+              <h1 className="text-lg font-extrabold text-brand-ink leading-tight">
+                {group.name} 회의실
+              </h1>
+            </div>
           </div>
+
+          {/* Stepper indicator (always visible) */}
+          <div className="overflow-x-auto py-1 scrollbar-none">
+            <Stepper currentPhase={phase} />
+          </div>
+
+          {/* Countdown timer */}
+          <div className="flex items-center gap-3 justify-end">
+            <div className="text-right">
+              <span className="text-[10px] block font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                남은 시간
+              </span>
+              <Timer seconds={remainingSeconds} className="text-2xl" />
+            </div>
+          </div>
+
         </div>
       </header>
 
-      <StudentPhaseGuide phase={phase} submitted={submitted} inputOpen={inputOpen} />
-      <FutureSelfCard group={group} phase={phase} />
-      <StudentInsightCards result={visibleResult} />
-      <EventCards cards={visibleResult?.eventCards ?? []} />
-      <PresentationCard group={group} />
-
-      {!preview && !inputOpen && !submitted && (
-        <div className={`${phase === "secondDiscussion" ? "info-callout" : "danger-callout"} mt-6 text-xl`}>
-          {phase === "secondDiscussion"
-            ? "지금은 2차 토론 단계입니다. 역할과 사건 카드를 바탕으로 어떤 선택을 바꿀지 먼저 토론하세요."
-            : "지금은 정책을 제출하는 단계가 아닙니다. 교사의 안내를 기다려 주세요."}
-        </div>
-      )}
-
-      <div className="mt-6 grid gap-5">
-        <PolicyChoiceControl
-          label="세금 정책 방향"
-          valueLabel={getTaxPolicy(constitution).shortLabel}
-          options={TAX_POLICY_OPTIONS}
-          selectedKey={getTaxPolicy(constitution).key}
-          info={POLICY_INFO.taxRate}
-          disabled={controlsDisabled}
-          onChange={option =>
-            changeValue({
-              taxPolicy: option.key,
-              taxRate: option.taxRate
-            })
-          }
-        />
-
-        <PolicyChoiceControl
-          label="국가 예산 방향"
-          valueLabel={getBudgetDirection(constitution).shortLabel}
-          options={BUDGET_DIRECTION_OPTIONS}
-          selectedKey={getBudgetDirection(constitution).key}
-          info={POLICY_INFO.welfareBudget}
-          disabled={controlsDisabled}
-          onChange={option =>
-            changeValue({
-              budgetDirection: option.key,
-              welfareBudget: option.welfareBudget
-            })
-          }
-        />
-
-        <PolicyChoiceControl
-          label="최저임금 방향"
-          valueLabel={getWagePolicy(constitution).shortLabel}
-          options={WAGE_POLICY_OPTIONS}
-          selectedKey={getWagePolicy(constitution).key}
-          info={POLICY_INFO.minimumWage}
-          disabled={controlsDisabled}
-          onChange={option =>
-            changeValue({
-              wagePolicy: option.key,
-              minimumWage: option.minimumWage
-            })
-          }
-        />
-      </div>
-
-      <footer className="mt-6">
-        {inputOpen && !submitted && (
-          <section className="panel mb-5">
-            <p className="panel-label">제출 전 점검</p>
-            <h2 className="panel-heading mt-1">무지의 베일 체크리스트</h2>
-            <div className="mt-4 grid gap-3">
-              {SUBMIT_CHECKS.map((item, index) => {
-                const checked = checkedItems.includes(index);
-
-                return (
-                  <label key={item} className="check-row">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={event => {
-                        setCheckedItems(current =>
-                          event.target.checked
-                            ? [...new Set([...current, index])]
-                            : current.filter(value => value !== index)
-                        );
-                      }}
-                    />
-                    <span>{item}</span>
-                  </label>
-                );
-              })}
-            </div>
+      {/* Main Container */}
+      <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 pb-32">
+        {preview && (
+          <section className="status-callout bg-brand-soft border-brand text-brand-ink p-4 rounded-2xl text-sm leading-relaxed">
+            💡 <strong>교사용 미리보기 모드</strong>입니다. 이 화면에서의 조작이나 제출은 실제 실시간 데이터베이스에 반영되지 않습니다.
           </section>
         )}
-        <button
-          type="button"
-          disabled={!canSubmit || submitted}
-          onClick={handleSubmit}
-          className="button-primary flex h-24 w-full items-center justify-center text-4xl"
-        >
-          {presentationOnly ? "발표 모드에서는 제출하지 않음" : preview ? "미리보기에서는 제출하지 않음" : submitted ? "설계 제출 완료" : "이 설계로 제출하기"}
-        </button>
-      </footer>
+
+        <StudentPhaseGuide phase={phase} submitted={submitted} inputOpen={inputOpen} />
+
+        {/* Phase specific content renders */}
+        
+        {/* Discussion Screen: 3 Issue Cards */}
+        {phase === "discussion" && (
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn">
+            {DISCUSSION_CARDS.map((card, i) => (
+              <article key={i} className="p-6 bg-white border border-gray-200 rounded-3xl shadow-1 flex flex-col justify-between min-h-[280px] hover:shadow-2 transition-shadow">
+                <div>
+                  <span className="chip chip-cobalt text-[10px] px-2.5 py-0.5 font-bold mb-3">쟁점 {i + 1}</span>
+                  <h3 className="text-lg font-bold text-brand-ink font-serif mb-2 leading-snug">{card.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed font-serif">{card.body}</p>
+                </div>
+                <strong className="text-xs text-brand leading-relaxed block font-serif pt-4 border-t border-dashed border-gray-100 mt-4">
+                  ★ 토론 쟁점: {card.prompt}
+                </strong>
+              </article>
+            ))}
+          </section>
+        )}
+
+        <FutureSelfCard group={group} phase={phase} allGroups={allGroups} />
+        
+        <StudentInsightCards result={visibleResult} />
+        
+        <EventCards cards={visibleResult?.eventCards ?? []} />
+
+        {/* Submission Warnings when inputs are closed */}
+        {!preview && !inputOpen && !submitted && phase !== "discussion" && (
+          <div className={`${phase === "secondDiscussion" ? "info-callout" : "danger-callout"} text-sm rounded-2xl`}>
+            {phase === "secondDiscussion"
+              ? "지금은 2차 토론 단계입니다. 역할 카드와 사건 카드를 바탕으로 어떤 정책을 수정할지 의논하세요."
+              : "지금은 설정을 편집하는 시간이 아닙니다. 교사의 안내를 기다려 주세요."}
+          </div>
+        )}
+
+        {/* Policy Choice Controls */}
+        <div className="grid gap-6">
+          {/* Progress bar indicating selections */}
+          {inputOpen && !submitted && (
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 flex items-center justify-between gap-4">
+              <span className="text-xs font-bold text-gray-500">정책 설계 완성도 ({selectionsMade}/3)</span>
+              <div className="flex-1 max-w-md h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-brand rounded-full transition-all duration-300" 
+                  style={{ width: `${(selectionsMade / 3) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <PolicyChoiceControl
+            label="세금 정책 방향"
+            valueLabel={getTaxPolicy(constitution).shortLabel}
+            options={TAX_POLICY_OPTIONS}
+            selectedKey={getTaxPolicy(constitution).key}
+            disabled={controlsDisabled}
+            firstRoundKey={firstRoundConstitution?.taxPolicy}
+            isSecondConstitution={phase === "revision"}
+            onChange={option =>
+              changeValue({
+                taxPolicy: option.key,
+                taxRate: option.taxRate
+              })
+            }
+          />
+
+          <PolicyChoiceControl
+            label="국가 예산 방향"
+            valueLabel={getBudgetDirection(constitution).shortLabel}
+            options={BUDGET_DIRECTION_OPTIONS}
+            selectedKey={getBudgetDirection(constitution).key}
+            disabled={controlsDisabled}
+            firstRoundKey={firstRoundConstitution?.budgetDirection}
+            isSecondConstitution={phase === "revision"}
+            onChange={option =>
+              changeValue({
+                budgetDirection: option.key,
+                welfareBudget: option.welfareBudget
+              })
+            }
+          />
+
+          <PolicyChoiceControl
+            label="최저임금 방향"
+            valueLabel={getWagePolicy(constitution).shortLabel}
+            options={WAGE_POLICY_OPTIONS}
+            selectedKey={getWagePolicy(constitution).key}
+            disabled={controlsDisabled}
+            firstRoundKey={firstRoundConstitution?.wagePolicy}
+            isSecondConstitution={phase === "revision"}
+            onChange={option =>
+              changeValue({
+                wagePolicy: option.key,
+                minimumWage: option.minimumWage
+              })
+            }
+          />
+        </div>
+
+        {/* Presentation Cards shown only in final stage */}
+        {phase === "final" && <PresentationCard group={group} />}
+
+        {/* Collapsible checklist + Submission Controls */}
+        {inputOpen && (
+          <footer className="mt-8 space-y-6">
+            {!submitted ? (
+              <section className="bg-white border border-gray-200 rounded-3xl p-5 shadow-2">
+                <button
+                  type="button"
+                  onClick={() => setChecklistOpen(!checklistOpen)}
+                  className="w-full flex items-center justify-between text-left focus:outline-none"
+                >
+                  <div>
+                    <span className="panel-label">제출 전 최종 점검</span>
+                    <h2 className="text-lg font-extrabold text-brand-ink mt-0.5">
+                      무지의 베일 체크리스트 (모두 점검해야 제출됩니다)
+                    </h2>
+                  </div>
+                  <span className="text-xl font-bold text-gray-400">
+                    {checklistOpen ? "▲" : "▼"}
+                  </span>
+                </button>
+
+                {checklistOpen && (
+                  <div className="mt-4 grid gap-3 animate-fadeIn">
+                    {SUBMIT_CHECKS.map((item, index) => {
+                      const checked = checkedItems.includes(index);
+
+                      return (
+                        <label 
+                          key={item} 
+                          className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer select-none transition-all ${
+                            checked 
+                              ? "bg-brand-soft/30 border-brand text-brand-ink" 
+                              : "bg-red-50/30 border-red-100 text-red-900 hover:bg-red-50/50"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            className="w-5 h-5 accent-brand cursor-pointer"
+                            onChange={event => {
+                              setCheckedItems(current =>
+                                event.target.checked
+                                  ? [...new Set([...current, index])]
+                                  : current.filter(value => value !== index)
+                              );
+                            }}
+                          />
+                          <span className="text-sm font-semibold">{item}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            ) : null}
+
+            {/* Submission button with sweep gradient & arrow interaction */}
+            <button
+              type="button"
+              disabled={!canSubmit || submitted}
+              onClick={handleSubmit}
+              className={`button-primary flex h-20 w-full items-center justify-center text-2xl font-bold rounded-2xl transition-all shadow-brand ${
+                submitted 
+                  ? "bg-success border-success shadow-none text-white cursor-default" 
+                  : "bg-gradient-to-r from-brand via-brand to-brand-deep bg-[length:200%_100%] bg-left hover:bg-right hover:scale-[1.01]"
+              }`}
+            >
+              {submitted ? (
+                <div className="flex items-center gap-3">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="animate-bounce">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>설계 제출 완료 (대기 중)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group">
+                  <span>이 설계로 제출하기</span>
+                  <span className="transition-transform group-hover:translate-x-2 duration-300">➔</span>
+                </div>
+              )}
+            </button>
+            
+            {/* Submitted Wait Screen with Counter */}
+            {submitted && !preview && (
+              <div className="p-6 bg-success-soft/50 border border-success/20 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+                <div>
+                  <h3 className="font-bold text-success text-base">다른 모둠을 기다리고 있습니다</h3>
+                  <p className="text-xs text-gray-600 font-serif mt-1">
+                    제출 완료 후, 모둠원들과 함께 우리가 고른 선택을 다시 점검하거나 발표 내용을 정리하세요.
+                  </p>
+                </div>
+                <div className="px-5 py-2.5 bg-success rounded-2xl text-white font-bold">
+                  제출 현황: {submittedGroupsCount} / {totalGroupsCount} 모둠
+                </div>
+              </div>
+            )}
+          </footer>
+        )}
+
       </div>
     </main>
   );

@@ -5,10 +5,17 @@ import {
   getTaxPolicy,
   getBudgetDirection,
   getWagePolicy,
-  useGameData
+  useGameData,
+  FUTURE_SELF_CARDS
 } from "./useGameData";
 import { getAppPath } from "./routes";
 import { getLessonPhaseGuide } from "./lessonFlow";
+import BrandMark from "./components/BrandMark";
+import Timer from "./components/Timer";
+import ComparisonChip from "./components/ComparisonChip";
+import RoleReveal from "./components/RoleReveal";
+import StudentApp from "./StudentApp"; // Used to render in fullscreen presentation
+import Toast from "./components/Toast";
 
 const TEACHER_PIN = "1234";
 const AUTO_CREATE_LOCK_KEY = "constitution-game:auto-create-lock";
@@ -38,78 +45,8 @@ const phaseLabel = phase =>
   SESSION_PHASES.find(item => item.key === phase)?.label ?? "토론";
 
 const formatTaxPolicy = constitution => getTaxPolicy(constitution).label;
-
-const formatBudgetDirection = constitution =>
-  getBudgetDirection(constitution).label;
-
+const formatBudgetDirection = constitution => getBudgetDirection(constitution).label;
 const formatWagePolicy = constitution => getWagePolicy(constitution).label;
-
-function PolicySummary({ constitution }) {
-  return (
-    <ul className="policy-summary-list">
-      <li>
-        <span>세금</span>: {formatTaxPolicy(constitution)}
-      </li>
-      <li>
-        <span>예산 방향</span>: {formatBudgetDirection(constitution)}
-      </li>
-      <li>
-        <span>최저임금</span>: {formatWagePolicy(constitution)}
-      </li>
-    </ul>
-  );
-}
-
-const downloadCsv = ({ pin, groups }) => {
-  const headers = [
-    "PIN",
-    "모둠",
-    "접속",
-    "제출",
-    "제출 시각",
-    "세금 정책 방향",
-    "국가 예산 방향",
-    "최저임금 방향",
-    "미래의 나",
-    "가장 불리한 시민도 버틸 수 있는가?",
-    "경제 활동의 자유는 얼마나 남아 있는가?",
-    "모두가 이 규칙을 받아들일 수 있는가?",
-    "역할 관점 해석",
-    "역할 관점 메시지"
-  ];
-
-  const rows = groups.map(group => [
-    pin,
-    group.name,
-    group.connected ? "접속" : "미접속",
-    group.isSubmitted ? "제출 완료" : "작성 중",
-    formatDateTime(group.submittedAt),
-    formatTaxPolicy(group.constitution),
-    formatBudgetDirection(group.constitution),
-    formatWagePolicy(group.constitution),
-    group.assignedClass?.label,
-    group.result ? getSurvivalInsight(group.result.survivalIndex).status : "",
-    group.result ? getFreedomInsight(group.result.assetGrowth).status : "",
-    group.result ? getIntegrationInsight(group.result.socialIntegration).status : "",
-    group.result?.classResult?.label,
-    group.result?.classResult?.message
-  ]);
-
-  const csv = [headers, ...rows]
-    .map(row => row.map(csvEscape).join(","))
-    .join("\n");
-  const blob = new Blob([`\ufeff${csv}`], {
-    type: "text/csv;charset=utf-8"
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `WhoAmI_정의로운사회만들기_${pin || "session"}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-};
 
 const downloadDetailedCsv = ({ pin, groups }) => {
   const headers = [
@@ -153,9 +90,9 @@ const downloadDetailedCsv = ({ pin, groups }) => {
       formatBudgetDirection(group.constitution),
       formatWagePolicy(group.constitution),
       group.assignedClass?.label,
-      group.result ? getSurvivalInsight(group.result.survivalIndex).status : "",
-      group.result ? getFreedomInsight(group.result.assetGrowth).status : "",
-      group.result ? getIntegrationInsight(group.result.socialIntegration).status : "",
+      group.result ? (group.result.survivalIndex >= 80 ? "기본 생활을 지킬 가능성이 높습니다." : group.result.survivalIndex >= 60 ? "기본 생활은 가능하지만 불안정합니다." : "생활 안정 장치가 부족합니다.") : "",
+      group.result ? (group.result.assetGrowth >= 0 ? "자유가 넉넉히 유지됩니다." : group.result.assetGrowth >= -15 ? "자유의 균형이 필요합니다." : "자유에 큰 부담이 생길 수 있습니다.") : "",
+      group.result ? (group.result.socialIntegration >= 80 ? "규칙 수용 가능성이 높습니다." : group.result.socialIntegration >= 60 ? "보완이 필요합니다." : "갈등 위험이 큽니다.") : "",
       group.result?.classResult?.label,
       group.result?.classResult?.message,
       eventCards[0] ? `${eventCards[0].title} - ${eventCards[0].question}` : "",
@@ -180,94 +117,17 @@ const downloadDetailedCsv = ({ pin, groups }) => {
   URL.revokeObjectURL(url);
 };
 
-const getSurvivalInsight = value => {
-  if (value >= 80) {
-    return {
-      title: "가장 불리한 시민도 버틸 수 있는가?",
-      status: "\uae30\ubcf8 \uc0dd\ud65c\uc744 \uc9c0\ud0ac \uac00\ub2a5\uc131\uc774 \ub192\uc2b5\ub2c8\ub2e4.",
-      body: "\uc0dd\uacc4, \uc758\ub8cc, \uc8fc\uac70 \uac19\uc740 \ucd5c\uc18c \uc0dd\ud65c \uc7a5\uce58\uac00 \ube44\uad50\uc801 \ub450\ud141\uac8c \ub9c8\ub828\ub41c \uc0ac\ud68c\uc785\ub2c8\ub2e4.",
-      question: "누가 가장 보호받고, 누가 부담을 느낄까요?"
-    };
-  }
-
-  if (value >= 60) {
-    return {
-      title: "가장 불리한 시민도 버틸 수 있는가?",
-      status: "\uae30\ubcf8 \uc0dd\ud65c\uc740 \uac00\ub2a5\ud558\uc9c0\ub9cc \ubd88\uc548\uc815\ud55c \uc9c0\uc810\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4.",
-      body: "\uac00\uc7a5 \ubd88\ub9ac\ud55c \uc704\uce58\uc758 \uc2dc\ubbfc\uc774 \ubc84\ud2f8 \uc218\ub294 \uc788\uc9c0\ub9cc, \uc704\uae30 \uc0c1\ud669\uc5d0\uc11c \ud754\ub4e4\ub9b4 \uac00\ub2a5\uc131\uc774 \uc788\uc2b5\ub2c8\ub2e4.",
-      question: "어떤 시민에게 보호가 더 필요하고, 그 비용은 누가 부담하나요?"
-    };
-  }
-
-  return {
-    title: "가장 불리한 시민도 버틸 수 있는가?",
-    status: "\uc0dd\ud65c \uc548\uc815 \uc7a5\uce58\uac00 \ubd80\uc871\ud569\ub2c8\ub2e4.",
-    body: "\uac00\uc7a5 \ubd88\ub9ac\ud55c \uc704\uce58\uc5d0\uc11c \uc774 \uc0ac\ud68c \uc124\uacc4\ub97c \ubc1b\uc544\ub4e4\uc774\uae30 \uc5b4\ub835\ub2e4\uace0 \ub290\ub084 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
-    question: "가장 불리한 시민이라면 이 규칙을 받아들일 수 있을까요?"
-  };
-};
-
-const getFreedomInsight = value => {
-  if (value >= 0) {
-    return {
-      title: "경제 활동의 자유는 얼마나 남아 있는가?",
-      status: "\uacbd\uc81c \ud65c\ub3d9\uc758 \uc790\uc720\uac00 \ub109\ub109\ud788 \uc720\uc9c0\ub429\ub2c8\ub2e4.",
-      body: "\uc138\uae08\uacfc \uc81c\ub3c4\uac00 \uc790\uc0b0 \ud615\uc131, \ud22c\uc790, \ucc3d\uc5c5 \uc758\uc695\uc744 \ud06c\uac8c \ub204\ub974\uc9c0 \uc54a\ub294 \uc0ac\ud68c\uc785\ub2c8\ub2e4.",
-      question: "이 자유가 다른 시민의 생활 안정과도 함께 갈 수 있나요?"
-    };
-  }
-
-  if (value >= -15) {
-    return {
-      title: "경제 활동의 자유는 얼마나 남아 있는가?",
-      status: "\uacf5\ub3d9\uccb4 \ubd80\ub2f4\uacfc \uc790\uc720\uc758 \uade0\ud615\uc744 \ub530\uc838\ubcfc \uc9c0\uc810\uc785\ub2c8\ub2e4.",
-      body: "\ubcf5\uc9c0\uc640 \uc0ac\ud68c \uc548\uc815\uc744 \uc704\ud55c \ubd80\ub2f4\uc774 \uc0dd\uae30\uc9c0\ub9cc, \uacbd\uc81c \ud65c\ub3d9\uc758 \ub3d9\uae30\ub97c \uc644\uc804\ud788 \uaebd\ub294 \uc815\ub3c4\ub294 \uc544\ub2d9\ub2c8\ub2e4.",
-      question: "누가 더 자유로워지고, 누가 더 부담을 지나요?"
-    };
-  }
-
-  return {
-    title: "경제 활동의 자유는 얼마나 남아 있는가?",
-    status: "\uacbd\uc81c \ud65c\ub3d9\uc758 \uc790\uc720\uc5d0 \ud070 \ubd80\ub2f4\uc774 \uc0dd\uae38 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
-    body: "\uacf5\ub3d9\uccb4 \ubcf4\uc7a5\uc744 \uac15\ud654\ud55c \ub300\uc2e0, \uc77c\ubd80 \uc2dc\ubbfc\uc740 \ub178\ub825\uc758 \ubcf4\uc0c1\uc774\ub098 \uc790\uc0b0 \ud615\uc131 \uae30\ud68c\uac00 \uc904\uc5c8\ub2e4\uace0 \ub290\ub084 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
-    question: "평등을 위해 줄어든 자유를 어떤 시민이 가장 크게 느낄까요?"
-  };
-};
-
-const getIntegrationInsight = value => {
-  if (value >= 80) {
-    return {
-      title: "모두가 이 규칙을 받아들일 수 있는가?",
-      status: "\uc11c\ub85c \uac19\uc740 \uaddc\uce59\uc744 \ubc1b\uc544\ub4e4\uc77c \uac00\ub2a5\uc131\uc774 \ub192\uc2b5\ub2c8\ub2e4.",
-      body: "\uacc4\uce35 \uac04 \uaca9\ucc28\uc640 \uac08\ub4f1\uc774 \ube44\uad50\uc801 \ub0ae\uc544, \uc0ac\ud68c \uad6c\uc131\uc6d0\uc774 \uac19\uc740 \uc81c\ub3c4\ub97c \uacf5\uc815\ud558\ub2e4\uace0 \ub290\ub084 \uc5ec\uc9c0\uac00 \ud07d\ub2c8\ub2e4.",
-      question: "다른 역할의 시민도 이 규칙을 공정하다고 느낄까요?"
-    };
-  }
-
-  if (value >= 60) {
-    return {
-      title: "모두가 이 규칙을 받아들일 수 있는가?",
-      status: "\uac08\ub4f1\uc744 \uc904\uc77c \uc7a5\uce58\uac00 \uc788\uc9c0\ub9cc \ubcf4\uc644\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.",
-      body: "\uc0ac\ud68c \uc804\uccb4\uac00 \ud06c\uac8c \ud754\ub4e4\ub9ac\uc9c0\ub294 \uc54a\uc9c0\ub9cc, \uc77c\ubd80 \uacc4\uce35\uc740 \ubd80\ub2f4\uacfc \ud61c\ud0dd\uc758 \ubc30\ubd84\uc744 \ubd88\uacf5\uc815\ud558\ub2e4\uace0 \ub290\ub084 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
-      question: "어떤 시민이 이 제도에 가장 불만을 가질까요?"
-    };
-  }
-
-  return {
-    title: "모두가 이 규칙을 받아들일 수 있는가?",
-    status: "\uc0ac\ud68c\uc801 \uac08\ub4f1\uc774 \ucee4\uc9c8 \uc704\ud5d8\uc774 \uc788\uc2b5\ub2c8\ub2e4.",
-    body: "\uacc4\uce35 \uc0ac\uc774\uc758 \ucc28\uc774\uac00 \ucee4\uc838 \uc11c\ub85c\uac00 \uac19\uc740 \uaddc\uce59\uc744 \uacf5\uc815\ud558\ub2e4\uace0 \ubc1b\uc544\ub4e4\uc774\uae30 \uc5b4\ub824\uc6b8 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
-    question: "누구에게 혜택이 가고, 누구에게 부담이 커졌나요?"
-  };
-};
-
-function InterpretationCard({ insight }) {
+function InterpretationCard({ title, status, body, question }) {
   return (
-    <article className="interpretation-card">
-      <p className="panel-label">{insight.title}</p>
-      <h3>{insight.status}</h3>
-      <p>{insight.body}</p>
-      <strong>{insight.question}</strong>
+    <article className="p-5 border border-gray-100 bg-gray-50/50 rounded-2xl flex flex-col justify-between">
+      <div>
+        <span className="chip chip-cobalt text-[10px] px-2.5 py-0.5 font-bold mb-3">{title}</span>
+        <h3 className="text-base font-bold text-brand-ink mb-2 leading-snug">{status}</h3>
+        <p className="text-gray-600 text-xs leading-relaxed font-serif mb-4">{body}</p>
+      </div>
+      <strong className="text-xs text-brand leading-snug font-serif pt-3 border-t border-dashed border-gray-200">
+        Q. {question}
+      </strong>
     </article>
   );
 }
@@ -279,7 +139,9 @@ function TimerStartPanel({
   remainingSeconds,
   defaultSeconds,
   onStart,
-  onSetTime
+  onSetTime,
+  autoStartTimer,
+  setAutoStartTimer
 }) {
   const [minutesInput, setMinutesInput] = useState("");
   const phaseName = phaseLabel(phase);
@@ -294,37 +156,50 @@ function TimerStartPanel({
   };
 
   return (
-    <section className="panel timer-panel">
-      <div className="timer-panel-grid">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl shadow-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <div>
-          <p className="panel-label">수업 타이머</p>
-          <h2 className="panel-heading">
-            {isRunning ? "진행 중" : "시작 대기"}
+          <span className="panel-label">수업 타이머</span>
+          <h2 className="text-2xl font-bold text-brand-ink mt-1">
+            {isRunning ? "타이머 진행 중" : "수업 시작 대기"}
           </h2>
-          <p className="mt-2 text-sm font-bold muted">
-            {phaseName} 기본값은 {formatTime(defaultSeconds)}입니다. 수업 상황에 맞춰 남은 시간을 바로 조정할 수 있습니다.
+          <p className="mt-2 text-xs font-serif text-gray-500">
+            {phaseName} 단계 기본 권장 시간은 {formatTime(defaultSeconds)}입니다.
           </p>
+          
+          {/* Auto Start Option (T2) */}
+          {!groupLocked && (
+            <label className="flex items-center gap-2 mt-4 select-none cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoStartTimer}
+                onChange={(e) => setAutoStartTimer(e.target.checked)}
+                className="w-4 h-4 accent-brand cursor-pointer"
+              />
+              <span className="text-xs font-bold text-gray-600">모둠 확정 시 자동으로 타이머 시작</span>
+            </label>
+          )}
         </div>
 
-        <div className="timer-action-area">
-          <div className="metric-card timer-metric text-center">
-            <p className="panel-label">남은 시간</p>
-            <p className="mt-1 font-sans text-4xl font-black text-brand tabular-nums">
-              {formatTime(remainingSeconds)}
-            </p>
+        <div className="flex flex-col md:items-end gap-3">
+          <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4">
+            <div className="text-right">
+              <span className="text-[10px] block font-bold text-gray-400 tracking-wider">남은 시간</span>
+              <Timer seconds={remainingSeconds} className="text-3xl" />
+            </div>
+            <button
+              type="button"
+              onClick={onStart}
+              disabled={!groupLocked || isRunning}
+              className="button-primary h-14 px-6 text-sm flex items-center gap-2 shadow-brand"
+            >
+              <span>{isRunning ? "진행 중" : "수업 시작"}</span>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onStart}
-            disabled={!groupLocked || isRunning}
-            className="button-primary timer-start-button text-lg"
-          >
-            {isRunning ? "시작됨" : "수업 시작"}
-          </button>
         </div>
       </div>
 
-      <div className="timer-adjust-row">
+      <div className="flex flex-wrap items-center gap-2 mt-6 pt-5 border-t border-gray-100">
         <button type="button" className="timer-adjust-button" onClick={() => onSetTime(remainingSeconds - 60)}>
           -1분
         </button>
@@ -332,9 +207,9 @@ function TimerStartPanel({
           +1분
         </button>
         <button type="button" className="timer-adjust-button" onClick={() => onSetTime(defaultSeconds)}>
-          기본값
+          기본값 복원
         </button>
-        <form className="timer-custom-form" onSubmit={applyMinutes}>
+        <form className="timer-custom-form ml-auto flex items-center gap-2" onSubmit={applyMinutes}>
           <input
             type="number"
             min="0"
@@ -342,98 +217,102 @@ function TimerStartPanel({
             step="1"
             value={minutesInput}
             onChange={event => setMinutesInput(event.target.value)}
-            placeholder="분"
+            placeholder="직접 입력 (분)"
+            className="field-control text-sm py-1.5 h-10 w-32 font-bold"
             aria-label="남은 시간 분 단위 입력"
           />
-          <button type="submit" className="button-secondary">
-            적용
+          <button type="submit" className="button-secondary h-10 px-4 text-xs">
+            설정
           </button>
         </form>
       </div>
-
-      {!groupLocked && (
-        <p className="info-callout mt-4 text-base">
-          먼저 입장한 모둠을 확정하면 타이머를 시작할 수 있습니다.
-        </p>
-      )}
     </section>
   );
 }
-
 
 function LessonCoachPanel({ phase, submittedCount, groupCount }) {
   const guide = getLessonPhaseGuide(phase);
 
   return (
-    <section className="panel lesson-coach-panel">
-      <div className="lesson-coach-header">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl shadow-2">
+      <div className="border-b border-gray-100 pb-4 mb-4 flex items-center justify-between">
         <div>
-          <p className="panel-label">수업 진행 코치</p>
-          <h2 className="panel-heading mt-1">{guide.title}</h2>
+          <span className="panel-label">수업 진행 코치</span>
+          <h2 className="text-xl font-bold text-brand-ink mt-0.5">{guide.title}</h2>
         </div>
-        <div className="lesson-coach-progress">
-          <span>제출 현황</span>
-          <strong>{submittedCount}/{groupCount}</strong>
+        <div className="bg-brand text-white font-extrabold text-sm px-4 py-2 rounded-2xl shadow-brand">
+          제출 현황: {submittedCount}/{groupCount}
         </div>
       </div>
 
-      <div className="lesson-coach-grid mt-5">
-        <article>
-          <span>교사가 지금 할 일</span>
-          <p>{guide.teacherAction}</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
+        <article className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+          <span className="text-xs font-bold text-brand block mb-1">교사가 지금 할 일</span>
+          <p className="text-xs text-gray-700 leading-relaxed font-serif">{guide.teacherAction}</p>
         </article>
-        <article>
-          <span>학생에게 던질 발문</span>
-          <p>{guide.prompt}</p>
+        <article className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+          <span className="text-xs font-bold text-brand block mb-1">학생에게 던질 발문</span>
+          <p className="text-xs text-gray-700 leading-relaxed font-serif">{guide.prompt}</p>
         </article>
-        <article>
-          <span>다음 단계로 넘어가기 전</span>
-          <p>{guide.evidence}</p>
+        <article className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+          <span className="text-xs font-bold text-brand block mb-1">다음 단계 이동 기준</span>
+          <p className="text-xs text-gray-700 leading-relaxed font-serif">{guide.evidence}</p>
         </article>
-        <article>
-          <span>주의할 점</span>
-          <p>{guide.caution}</p>
+        <article className="p-4 bg-red-50/20 rounded-2xl border border-red-100/50">
+          <span className="text-xs font-bold text-danger block mb-1">주의할 점</span>
+          <p className="text-xs text-red-900 leading-relaxed font-serif">{guide.caution}</p>
         </article>
       </div>
     </section>
   );
 }
+
 function PhaseControls({ phase, onChange }) {
-  const nextPhase = getNextPhase(phase);
+  const currentIndex = SESSION_PHASES.findIndex(item => item.key === phase);
+  const nextPhase = SESSION_PHASES[currentIndex + 1] ?? null;
 
   return (
-    <section className="panel lesson-flow-panel">
-      <div className="lesson-flow-header">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl shadow-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-5 mb-5">
         <div>
-          <p className="panel-label">수업 흐름</p>
-          <h2 className="panel-heading mt-1">현재 단계: {phaseLabel(phase)}</h2>
-          <p className="mt-2 font-bold muted">
-            토론 → 1차 설계 → 역할 공개 → 2차 토론 → 2차 설계 → 발표
+          <span className="panel-label">수업 흐름 관리</span>
+          <h2 className="text-xl font-bold text-brand-ink mt-0.5">현재 단계: {phaseLabel(phase)}</h2>
+          <p className="text-xs font-serif text-gray-500 mt-1">
+            각 단계를 클릭해 직접 이동하거나, 우측 버튼을 눌러 다음 단계로 진행합니다. (단축키: Space)
           </p>
         </div>
         <button
           type="button"
           disabled={!nextPhase}
           onClick={() => nextPhase && onChange(nextPhase.key)}
-          className="button-primary h-16 min-w-48 px-6 text-xl"
+          className="button-primary h-14 px-8 text-sm flex items-center gap-2 shadow-brand"
         >
-          {nextPhase ? `${nextPhase.label} 단계로 진행` : "진행 완료"}
+          <span>{nextPhase ? `${nextPhase.label} 단계로 진행` : "모든 활동 완료"}</span>
+          <span className="text-xs opacity-80">(Space)</span>
         </button>
       </div>
 
-      <div className="phase-grid mt-5">
-        {SESSION_PHASES.map(item => {
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+        {SESSION_PHASES.map((item, index) => {
           const active = item.key === phase;
+          const done = index < currentIndex;
+          
+          let btnClass = "border-gray-200 text-gray-500 hover:bg-gray-50";
+          if (active) {
+            btnClass = "border-brand bg-brand text-white shadow-brand";
+          } else if (done) {
+            btnClass = "border-brand-soft bg-brand-soft/30 text-brand-deep font-semibold";
+          }
 
           return (
             <button
               key={item.key}
               type="button"
               onClick={() => onChange(item.key)}
-              className={`phase-button ${active ? "active" : ""}`}
+              className={`p-3 border rounded-xl flex flex-col justify-center items-center text-center transition-all ${btnClass}`}
             >
-              <span className="block">{item.label}</span>
-              <span className="phase-note">
+              <span className="text-sm font-bold">{item.label}</span>
+              <span className={`text-[10px] mt-1 ${active ? "text-white/80" : "text-gray-400"}`}>
                 {item.note}
               </span>
             </button>
@@ -444,27 +323,20 @@ function PhaseControls({ phase, onChange }) {
   );
 }
 
-const getNextPhase = phase => {
-  const currentIndex = SESSION_PHASES.findIndex(item => item.key === phase);
-  if (currentIndex < 0) return SESSION_PHASES[0];
-  return SESSION_PHASES[currentIndex + 1] ?? null;
-};
-
-
 function TeacherEventCards({ cards = [] }) {
   if (!cards.length) return null;
 
   return (
-    <section className="panel">
-      <p className="panel-label">오늘의 사회 뉴스</p>
-      <h2 className="panel-heading mt-1">우리 사회 설계가 만든 사건</h2>
-      <div className="event-grid mt-5">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl shadow-2">
+      <span className="panel-label">오늘의 사회 뉴스</span>
+      <h2 className="text-xl font-bold text-brand-ink mt-0.5 mb-4 font-serif">우리 사회 설계가 만든 사건</h2>
+      <div className="event-grid">
         {cards.map((card, index) => (
-          <article key={`${card.title}-${index}`} className={`event-card ${card.type ?? "mixed"}`}>
-            <p className="event-card-label">사건 {index + 1}</p>
-            <h3>{card.title}</h3>
-            <p>{card.body}</p>
-            <strong>{card.question}</strong>
+          <article key={`${card.title}-${index}`} className={`event-card ${card.type ?? "mixed"} bg-white`}>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">사건 {index + 1}</p>
+            <h3 className="text-base font-bold text-brand-ink leading-snug mt-1 mb-2 font-serif">{card.title}</h3>
+            <p className="text-gray-600 text-xs leading-relaxed font-serif mb-3">{card.body}</p>
+            <strong className="text-xs text-brand font-serif block border-t border-dashed border-gray-100 pt-2">Q. {card.question}</strong>
           </article>
         ))}
       </div>
@@ -472,76 +344,38 @@ function TeacherEventCards({ cards = [] }) {
   );
 }
 
-
-function FutureSelfPanel({ selectedGroup }) {
-  const futureSelf = selectedGroup?.assignedClass;
-
-  if (!futureSelf) {
-    return (
-      <div className="metric-card">
-        <p className="panel-label">무지의 베일</p>
-        <p className="mt-2 font-bold">
-          아직 이 모둠의 미래 위치는 공개되지 않았습니다.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="future-card teacher-future-card">
-      <div>
-        <p className="panel-label">공개된 미래의 나</p>
-        <h3 className="panel-heading mt-1">{futureSelf.label}</h3>
-        <p className="mt-3 font-bold text-[var(--color-text)]">
-          {futureSelf.headline ?? "공개된 역할에서 사회 제도의 영향을 다시 살펴봅니다."}
-        </p>
-        <p className="mt-3 text-lg leading-8 text-[var(--color-text)]">
-          {futureSelf.situation ??
-            "이 역할의 시민에게 세금, 예산, 최저임금 선택이 어떤 이익과 부담을 만드는지 토론해 보세요."}
-        </p>
-      </div>
-
-      <div className="future-detail-grid">
-        <div className="metric-card future-priority-card">
-          <p className="panel-label">내가 특히 따져볼 기준</p>
-          <p className="mt-2 font-bold">
-            {futureSelf.priority ?? "생활 안정, 기회, 공정한 부담"}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ComparisonTable({ groups, selectedGroupId, onSelect }) {
   return (
-    <section className="panel">
-      <div className="mb-4 flex items-center justify-between gap-4">
+    <section className="panel p-6 bg-white border border-gray-200 rounded-3xl shadow-2">
+      <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
         <div>
-          <p className="panel-label">전체 비교</p>
-          <h2 className="panel-heading">모둠별 선택 변화</h2>
+          <span className="panel-label">실시간 비교표</span>
+          <h2 className="text-xl font-bold text-brand-ink mt-0.5">모둠별 선택 변화 비교</h2>
         </div>
-        <p className="text-sm font-bold muted">
-          행을 누르면 발표 모둠으로 선택됩니다.
+        <p className="text-xs font-serif text-gray-500">
+          행을 누르면 해당 모둠이 상세 보기 및 발표 모둠으로 선택됩니다.
         </p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="data-table comparison-table">
+      <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <table className="data-table w-full text-sm">
           <thead>
-            <tr>
-              <th rowSpan="2">모둠</th>
-              <th rowSpan="2">상태</th>
-              <th colSpan="3" className="text-center">1차 제출</th>
-              <th rowSpan="2">공개된 역할</th>
-              <th colSpan="3" className="text-center">2차 제출</th>
+            <tr className="bg-gray-50">
+              <th className="sticky left-0 bg-gray-50 z-10 border-r border-gray-200">모둠</th>
+              <th className="border-r border-gray-200">상태</th>
+              <th colSpan="3" className="text-center border-r border-gray-200">1차 정책 설계</th>
+              <th className="border-r border-gray-200">공개된 역할</th>
+              <th colSpan="3" className="text-center">2차 정책 설계</th>
             </tr>
-            <tr>
+            <tr className="bg-gray-50/50 text-[11px] border-b border-gray-200">
+              <th className="sticky left-0 bg-gray-50 z-10 border-r border-gray-200" />
+              <th className="border-r border-gray-200" />
               <th>세금</th>
-              <th>예산 방향</th>
-              <th>최저임금</th>
+              <th>예산</th>
+              <th className="border-r border-gray-200">최저임금</th>
+              <th className="border-r border-gray-200" />
               <th>세금</th>
-              <th>예산 방향</th>
+              <th>예산</th>
               <th>최저임금</th>
             </tr>
           </thead>
@@ -549,32 +383,72 @@ function ComparisonTable({ groups, selectedGroupId, onSelect }) {
             {groups.map(group => {
               const active = group.id === selectedGroupId;
               const firstRound = group.history?.[0];
-              const firstConstitution =
-                firstRound?.constitution ??
+              
+              const firstConstitution = firstRound?.constitution ?? 
                 (group.isSubmitted || group.result ? group.constitution : null);
+              
               const secondConstitution = firstRound && group.isSubmitted
                 ? group.constitution
                 : null;
+              
               const roleLabel =
                 group.assignedClass?.label ?? firstRound?.assignedClass?.label ?? "-";
+
+              // Check if policy changed in second round
+              const taxChanged = secondConstitution && firstConstitution && secondConstitution.taxPolicy !== firstConstitution.taxPolicy;
+              const budgetChanged = secondConstitution && firstConstitution && secondConstitution.budgetDirection !== firstConstitution.budgetDirection;
+              const wageChanged = secondConstitution && firstConstitution && secondConstitution.wagePolicy !== firstConstitution.wagePolicy;
 
               return (
                 <tr
                   key={group.id}
                   onClick={() => onSelect(group.id)}
-                  className={active ? "active" : ""}
+                  className={`cursor-pointer transition-all hover:bg-gray-50 ${
+                    active ? "active bg-brand-soft/20 border-l-4 border-brand" : ""
+                  }`}
                 >
-                  <td>{group.name}</td>
-                  <td>
-                    {group.isSubmitted ? "제출 완료" : group.connected ? "작성 중" : "미접속"}
+                  <td className="sticky left-0 bg-white font-bold border-r border-gray-200 z-10">
+                    {group.name}
                   </td>
-                  <td>{firstConstitution ? formatTaxPolicy(firstConstitution) : "-"}</td>
-                  <td>{firstConstitution ? formatBudgetDirection(firstConstitution) : "-"}</td>
-                  <td>{firstConstitution ? formatWagePolicy(firstConstitution) : "-"}</td>
-                  <td className="role-cell">{roleLabel}</td>
-                  <td>{secondConstitution ? formatTaxPolicy(secondConstitution) : "-"}</td>
-                  <td>{secondConstitution ? formatBudgetDirection(secondConstitution) : "-"}</td>
-                  <td>{secondConstitution ? formatWagePolicy(secondConstitution) : "-"}</td>
+                  <td className="border-r border-gray-200 text-xs">
+                    {group.isSubmitted ? (
+                      <span className="chip chip-success py-0.5 px-2 text-[10px]">제출 완료</span>
+                    ) : group.connected ? (
+                      <span className="chip chip-cobalt py-0.5 px-2 text-[10px]">작성 중</span>
+                    ) : (
+                      <span className="text-gray-400 text-[10px]">미접속</span>
+                    )}
+                  </td>
+                  
+                  {/* 1st Round Choices */}
+                  <td>
+                    <ComparisonChip value={firstConstitution ? getTaxPolicy(firstConstitution).shortLabel : "-"} />
+                  </td>
+                  <td>
+                    <ComparisonChip value={firstConstitution ? getBudgetDirection(firstConstitution).shortLabel : "-"} />
+                  </td>
+                  <td className="border-r border-gray-200">
+                    <ComparisonChip value={firstConstitution ? getWagePolicy(firstConstitution).shortLabel : "-"} />
+                  </td>
+
+                  {/* Assigned Role */}
+                  <td className="border-r border-gray-200 font-serif font-bold text-xs text-brand-ink bg-gray-50/50">
+                    {roleLabel}
+                  </td>
+
+                  {/* 2nd Round Choices with change indicator dot */}
+                  <td>
+                    {taxChanged && <span className="text-brand mr-1 animate-pulse">●</span>}
+                    <ComparisonChip value={secondConstitution ? getTaxPolicy(secondConstitution).shortLabel : "-"} />
+                  </td>
+                  <td>
+                    {budgetChanged && <span className="text-brand mr-1 animate-pulse">●</span>}
+                    <ComparisonChip value={secondConstitution ? getBudgetDirection(secondConstitution).shortLabel : "-"} />
+                  </td>
+                  <td>
+                    {wageChanged && <span className="text-brand mr-1 animate-pulse">●</span>}
+                    <ComparisonChip value={secondConstitution ? getWagePolicy(secondConstitution).shortLabel : "-"} />
+                  </td>
                 </tr>
               );
             })}
@@ -601,38 +475,101 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
     createSession,
     isDemoMode
   } = useGameData(pin);
+
   const [rolling, setRolling] = useState(false);
-  const [slotText, setSlotText] = useState("아직 공개 전");
   const [createdPin, setCreatedPin] = useState(pin || "");
   const [setupMessage, setSetupMessage] = useState("");
+  
+  // Dropdown menu state
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  
+  // Auto Start Timer configuration (T2)
+  const [autoStartTimer, setAutoStartTimer] = useState(false);
+
+  // Fullscreen Presentation Modal (T5)
+  const [isFullscreenPresentation, setIsFullscreenPresentation] = useState(false);
+
+  // Toast notification
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("info");
+
   const autoCreateRef = useRef(false);
 
   const groupList = useMemo(() => Object.values(groups), [groups]);
+  
   const selectedGroup = session?.selectedGroupId
     ? groups[session.selectedGroupId]
     : groupList[0];
+
   const submittedCount = groupList.filter(group => group.isSubmitted).length;
   const connectedCount = groupList.filter(group => group.connected).length;
   const groupLocked = Boolean(session?.groupLocked);
   const isRunning = session?.status === "running";
-  const isFinalPhase = phase === "final";
-  const discussionReviewPhase = phase === "secondDiscussion" || phase === "revision";
-  const displayResult = selectedGroup?.result ?? (discussionReviewPhase ? selectedGroup?.history?.[0]?.result : null);
-  const resultActionLabel = phase === "secondDiscussion"
-    ? "2차 토론 진행 중"
-    : phase === "revision"
-      ? "2차 설계 진행 중"
-      : selectedGroup?.rouletteDone
-      ? isFinalPhase
-        ? "2차 설계 결과 확인 완료"
-        : "미래의 나 공개 완료"
-      : rolling
-        ? "미래의 나 공개 중"
-        : isFinalPhase
-          ? "2차 설계 결과 확인"
-          : "미래의 나 공개";
+  
+  const displayResult = selectedGroup?.result ?? 
+    ((phase === "secondDiscussion" || phase === "revision") ? selectedGroup?.history?.[0]?.result : null);
+  
   const canOpenPresentation = Boolean(selectedGroup?.history?.[0] && selectedGroup?.isSubmitted);
   const defaultPhaseSeconds = getPhaseDefaultSeconds(phase);
+
+  // Grouped comparison board by assigned class (F5)
+  const groupedByClass = useMemo(() => {
+    const categories = {
+      upper: { label: "상류층 계열", teams: [] },
+      middle: { label: "중산층 계열", teams: [] },
+      lower: { label: "빈곤층 계열", teams: [] },
+      unassigned: { label: "배정 대기", teams: [] }
+    };
+
+    groupList.forEach(g => {
+      const classKey = g.assignedClass?.classKey ?? g.assignedClass?.key;
+      if (classKey === "upper" || classKey === "middle" || classKey === "lower") {
+        categories[classKey].teams.push(g);
+      } else {
+        categories.unassigned.teams.push(g);
+      }
+    });
+
+    return categories;
+  }, [groupList]);
+
+  // Keyboard Shortcuts (P, Space, R)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+
+      if (e.key === "p" || e.key === "P") {
+        // Toggle fullscreen presentation mode for selected group
+        if (canOpenPresentation) {
+          setIsFullscreenPresentation(prev => !prev);
+        } else {
+          setToastType("error");
+          setToastMessage("이 모둠은 2차 제출 완료 후에만 발표 화면을 열 수 있습니다.");
+        }
+      } else if (e.key === " ") {
+        // Space goes to next phase
+        e.preventDefault();
+        const currentIndex = SESSION_PHASES.findIndex(item => item.key === phase);
+        const next = SESSION_PHASES[currentIndex + 1] ?? null;
+        if (next) {
+          setPhase(next.key);
+          setToastType("success");
+          setToastMessage(`[${next.label}] 단계로 이동했습니다.`);
+        }
+      } else if (e.key === "r" || e.key === "R") {
+        // Trigger roulette
+        if (selectedGroup && selectedGroup.isSubmitted && !selectedGroup.rouletteDone && !rolling) {
+          // Trigger click logic on roulette
+          const rouletteBtn = document.querySelector(".perspective-1000 + button");
+          if (rouletteBtn) rouletteBtn.click();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [phase, selectedGroup, canOpenPresentation, rolling]);
 
   const handleCreate = async () => {
     if (autoCreateRef.current) return;
@@ -672,142 +609,85 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
   const handleStartSession = async () => {
     const result = await startSession();
     if (!result.ok) {
-      setSetupMessage("이미 시작되었거나 세션을 찾을 수 없습니다.");
+      setToastType("error");
+      setToastMessage("이미 시작되었거나 세션을 찾을 수 없습니다.");
     } else {
-      setSetupMessage("수업 타이머가 시작되었습니다.");
+      setToastType("success");
+      setToastMessage("수업 타이머가 시작되었습니다.");
     }
   };
 
   const openStudentPreview = () => {
-    const previewUrl = getAppPath({
-      role: "student",
-      pin,
-      preview: "1"
-    });
+    const previewUrl = getAppPath({ role: "student", pin, preview: "1" });
     window.open(previewUrl, "_blank", "noopener,noreferrer");
   };
 
   const openTeacherGuidePage = () => {
-    const guideUrl = getAppPath({
-      role: "guide"
-    });
+    const guideUrl = getAppPath({ role: "guide" });
     window.open(guideUrl, "_blank", "noopener,noreferrer");
   };
 
   const openWrapUpPage = () => {
-    const wrapUpUrl = getAppPath({
-      role: "wrapup"
-    });
+    const wrapUpUrl = getAppPath({ role: "wrapup" });
     window.open(wrapUpUrl, "_blank", "noopener,noreferrer");
   };
 
-  const openPresentationView = () => {
-    if (!selectedGroup?.id || !canOpenPresentation) return;
-
-    const presentationUrl = getAppPath({
-      role: "student",
-      pin,
-      groupId: selectedGroup.id,
-      presentation: "1"
-    });
-    window.open(presentationUrl, "_blank", "noopener,noreferrer");
-  };
-
   const openPresentationPreview = () => {
-    const presentationUrl = getAppPath({
-      role: "student",
-      presentation: "1",
-      example: "1"
-    });
+    const presentationUrl = getAppPath({ role: "student", presentation: "1", example: "1" });
     window.open(presentationUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleSetTime = async seconds => {
     const result = await setTimerSeconds(seconds);
     if (!result.ok) {
-      setSetupMessage("세션을 찾을 수 없어 시간을 조정하지 못했습니다.");
+      setToastType("error");
+      setToastMessage("남은 시간 설정에 실패했습니다.");
       return;
     }
-
-    setSetupMessage(`남은 시간을 ${formatTime(result.durationSeconds)}로 조정했습니다.`);
+    setToastType("success");
+    setToastMessage(`남은 시간을 ${formatTime(result.durationSeconds)}로 조정했습니다.`);
   };
 
   const handleFinalizeGroups = async () => {
     const result = await finalizeGroups();
     if (!result.ok) {
-      setSetupMessage("입장한 모둠이 없습니다. 학생들이 먼저 입장한 뒤 확정해 주세요.");
+      setToastType("error");
+      setToastMessage("입장한 모둠이 없습니다. 학생들이 먼저 모둠 참여 완료 후 진행해 주세요.");
     } else {
-      setSetupMessage(`${result.count}개 모둠으로 게임 참여 모둠을 확정했습니다.`);
+      setToastType("success");
+      setToastMessage(`${result.count}개 모둠으로 게임 참여 모둠을 확정했습니다.`);
+      // Auto Start Timer configuration (T2)
+      if (autoStartTimer) {
+        setTimeout(handleStartSession, 800);
+      }
     }
   };
 
-  const handleRoulette = async () => {
-    if (!selectedGroup?.id || rolling || !selectedGroup.isSubmitted) return;
-
-    const finalCheck = phase === "final" && selectedGroup.assignedClass;
-
-    if (finalCheck) {
-      const outcome = await runRoulette(selectedGroup.id);
-
-      if (outcome?.picked?.label) {
-        setSlotText(outcome.picked.label);
-      }
-
-      return;
-    }
-
-    setRolling(true);
-    const labels = [
-      "저소득 가정의 청소년",
-      "자영업자",
-      "중산층 직장인",
-      "고소득 전문직",
-      "노후 소득이 부족한 노인"
-    ];
-    let tick = 0;
-
-    const timer = setInterval(() => {
-      setSlotText(labels[tick % labels.length]);
-      tick += 1;
-    }, 120);
-
-    await new Promise(resolve => setTimeout(resolve, 3800));
-
-    clearInterval(timer);
-    const outcome = await runRoulette(selectedGroup.id);
-
-    if (outcome?.picked?.label) {
-      setSlotText(outcome.picked.label);
-    }
-
-    setRolling(false);
+  const handleRouletteReveal = async () => {
+    return await runRoulette(selectedGroup.id);
   };
 
   if (teacherPin !== TEACHER_PIN) {
     return (
-      <main className="app-page center-page">
-        <section className="brand-card">
-          <div className="mb-6 flex items-center gap-4">
-            <div className="brand-logo">붕</div>
-            <div>
+      <main className="app-page center-page bg-canvas">
+        <section className="brand-card bg-white p-8 rounded-3xl border border-gray-200 text-center">
+          <div className="mb-6 flex items-center gap-4 justify-center">
+            <BrandMark size="lg" />
+            <div className="text-left">
               <p className="brand-kicker">교사용 접근 제한</p>
-              <h1 className="brand-title">교사용 PIN이 필요합니다</h1>
+              <h1 className="brand-title text-2xl font-serif">교사용 PIN 번호가 필요합니다</h1>
             </div>
           </div>
-
-          <p className="danger-callout text-base">
-            교사용 화면은 4자리 교사용 PIN을 입력해야 열 수 있습니다.
-            처음 화면에서 교사를 선택하고 교사용 PIN을 입력해 주세요.
+          <p className="danger-callout text-sm justify-center leading-relaxed">
+            교사용 대시보드는 4자리 교사용 PIN을 입력해야 진입할 수 있습니다.<br />
+            입장 화면에서 '교사' 탭을 누르고 올바른 인증 코드를 입력하세요.
           </p>
-
           <button
             type="button"
-            onClick={() => {
-              window.location.href = getAppPath();
-            }}
-            className="button-secondary mt-6 h-14 w-full text-lg"
+            onClick={() => { window.location.href = getAppPath(); }}
+            className="button-secondary mt-6 h-12 w-full text-base"
           >
-            입장 화면으로 돌아가기
+            시작 화면으로 돌아가기
           </button>
         </section>
       </main>
@@ -816,33 +696,25 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
 
   if (!pin && !createdPin) {
     return (
-      <main className="app-page center-page text-center">
-        <section className="brand-card">
-          <div className="mb-6 flex items-center gap-4">
-            <div className="brand-logo">붕</div>
+      <main className="app-page center-page bg-canvas">
+        <section className="brand-card bg-white p-8 rounded-3xl border border-gray-200 text-center">
+          <div className="mb-6 flex items-center gap-4 justify-center">
+            <BrandMark size="lg" className="animate-spin duration-[4000ms]" />
             <div className="text-left">
               <p className="brand-kicker">교사용 대시보드</p>
-              <h1 className="brand-title">새 세션을 준비하고 있습니다</h1>
+              <h1 className="brand-title text-2xl font-serif">새 수업 세션을 준비 중입니다</h1>
             </div>
           </div>
-
-          <p className="status-callout text-base">
-            잠시 후 바로 교사용 대시보드로 이동합니다.
+          <p className="status-callout justify-center text-sm">
+            잠시 후 데이터베이스 연결 완료 시 자동으로 대시보드로 이동합니다.
           </p>
-
           {setupMessage && (
-            <>
-              <p className="danger-callout mt-4 text-base">
-                {setupMessage}
-              </p>
-              <button
-                type="button"
-                onClick={handleCreate}
-                className="button-primary mt-4 h-14 w-full text-lg"
-              >
-                다시 시도
+            <div className="mt-4">
+              <p className="danger-callout text-xs justify-center">{setupMessage}</p>
+              <button type="button" onClick={handleCreate} className="button-primary mt-4 h-12 w-full text-sm">
+                다시 세션 만들기 시도
               </button>
-            </>
+            </div>
           )}
         </section>
       </main>
@@ -851,136 +723,202 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
 
   if (loading) {
     return (
-      <main className="app-page center-page text-3xl font-bold text-brand">
-        대시보드 불러오는 중
+      <main className="min-h-screen flex items-center justify-center bg-canvas text-xl font-bold text-brand font-serif">
+        <div className="flex flex-col items-center gap-4">
+          <BrandMark size="lg" className="animate-spin duration-[4000ms]" />
+          <span>대시보드를 연동하는 중...</span>
+        </div>
       </main>
     );
   }
 
   if (!session) {
     return (
-      <main className="app-page center-page text-3xl font-bold text-red-700">
-        세션을 찾을 수 없습니다.
+      <main className="min-h-screen flex items-center justify-center p-6 bg-canvas text-center font-serif">
+        <div className="max-w-md p-8 bg-white rounded-3xl border border-gray-200 shadow-2">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">세션이 존재하지 않습니다</h2>
+          <p className="text-gray-600 leading-relaxed text-sm">
+            잘못된 세션 PIN 번호입니다. 새로 대시보드를 생성하거나 URL을 다시 점검해 주십시오.
+          </p>
+          <button
+            type="button"
+            onClick={() => { window.location.hash = ""; window.location.reload(); }}
+            className="button-secondary mt-6 h-12 px-6"
+          >
+            새 세션 만들기
+          </button>
+        </div>
       </main>
     );
   }
 
+  // Check the current setup wizard step
+  let setupStep = 1; // 1: 수업 준비 (groups entering)
+  if (groupLocked) {
+    setupStep = 2; // 2: 모둠 확정 (locked, wait start)
+    if (isRunning) {
+      setupStep = 3; // 3: 진행 중 (running)
+    }
+  }
+
   return (
-    <main className="dashboard-shell">
-      <header className="dashboard-header">
+    <main className="dashboard-shell bg-canvas flex flex-col h-screen select-none">
+      
+      {/* Sticky Header with Cobalt theme */}
+      <header className="sticky top-0 z-40 bg-midnight h-18 text-white px-6 flex items-center justify-between border-b border-white/10 shadow-3">
         <div className="flex items-center gap-4">
-          <div className="brand-logo">붕</div>
+          <BrandMark size="sm" />
           <div>
-            <div className="flex items-center gap-3">
-              <p className="brand-kicker">교사용 대시보드</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold tracking-widest text-brand-soft uppercase">
+                Who am I 교사 대시보드
+              </span>
               {isDemoMode && (
-                <span className="rounded bg-[var(--color-brand-soft)] px-2 py-1 text-xs font-black text-[var(--color-brand-ink)]">
+                <span className="text-[9px] font-extrabold bg-blue-900 text-blue-200 px-1.5 py-0.5 rounded">
                   로컬 데모
                 </span>
               )}
             </div>
-            <h1>Who am I : 정의로운 사회 만들기 PIN {pin}</h1>
+            <h1 className="text-base font-bold font-serif leading-none mt-0.5">
+              정의로운 사회 설계 세션 (PIN: <span className="font-sans text-accent tracking-wider font-extrabold text-lg">{pin}</span>)
+            </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        {/* 3-Step Wizard Bar (T1) */}
+        <div className="hidden lg:flex items-center gap-6 text-xs font-bold bg-white/5 border border-white/10 px-4 py-2 rounded-2xl">
+          <div className="flex items-center gap-2">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+              setupStep >= 1 ? "bg-brand text-white" : "bg-white/10 text-white/50"
+            }`}>1</span>
+            <span className={setupStep === 1 ? "text-white" : "text-white/40"}>수업 준비 (입장 대기)</span>
+          </div>
+          <span className="text-white/20">➔</span>
+          <div className="flex items-center gap-2">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+              setupStep >= 2 ? "bg-brand text-white" : "bg-white/10 text-white/50"
+            }`}>2</span>
+            <span className={setupStep === 2 ? "text-white" : "text-white/40"}>모둠 확정</span>
+          </div>
+          <span className="text-white/20">➔</span>
+          <div className="flex items-center gap-2">
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+              setupStep >= 3 ? "bg-brand text-white" : "bg-white/10 text-white/50"
+            }`}>3</span>
+            <span className={setupStep === 3 ? "text-white" : "text-white/40"}>수업 진행</span>
+          </div>
+        </div>
+
+        {/* Action Controls & Dropdown Menu (T3) */}
+        <div className="flex items-center gap-4 relative">
           <button
             type="button"
-            onClick={openStudentPreview}
-            className="button-secondary h-12 px-4 text-sm"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="button-secondary text-white border-white/20 hover:bg-white/10 px-3.5 h-10 text-xs flex items-center gap-1.5"
           >
-            학생용 화면 보기
+            <span>보조 기능 메뉴</span>
+            <span>{dropdownOpen ? "▲" : "▼"}</span>
           </button>
-          <button
-            type="button"
-            onClick={openTeacherGuidePage}
-            className="button-secondary h-12 px-4 text-sm"
-          >
-            활동 가이드
-          </button>
-          <button
-            type="button"
-            onClick={openWrapUpPage}
-            className="button-secondary h-12 px-4 text-sm"
-          >
-            수업 마무리
-          </button>
-          <button
-            type="button"
-            onClick={openPresentationPreview}
-            className="button-secondary h-12 px-4 text-sm"
-          >
-            발표 화면 미리보기
-          </button>
-          <button
-            type="button"
-            onClick={() => downloadDetailedCsv({ pin, groups: groupList })}
-            className="button-secondary h-12 px-4 text-sm"
-          >
-            CSV 저장
-          </button>
-          <div className="text-right">
-            <p className="panel-label">제출 현황</p>
-            <p className="text-3xl font-black text-brand">
-              {submittedCount}/{groupList.length}
-            </p>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 top-12 w-56 bg-white border border-gray-200 rounded-2xl shadow-3 p-2 text-brand-ink text-xs z-50 animate-fadeIn">
+              <button onClick={() => { setDropdownOpen(false); openStudentPreview(); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 font-semibold block">
+                학생용 화면 보기 (새 탭)
+              </button>
+              <button onClick={() => { setDropdownOpen(false); openTeacherGuidePage(); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 font-semibold block">
+                활동 가이드 리허설 (새 탭)
+              </button>
+              <button onClick={() => { setDropdownOpen(false); openWrapUpPage(); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 font-semibold block">
+                수업 마무리 정리 (새 탭)
+              </button>
+              <button onClick={() => { setDropdownOpen(false); openPresentationPreview(); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 font-semibold block">
+                발표 샘플 미리보기 (새 탭)
+              </button>
+              <hr className="my-1.5 border-gray-100" />
+              <button 
+                onClick={() => { setDropdownOpen(false); downloadDetailedCsv({ pin, groups: groupList }); }} 
+                className="w-full text-left px-3 py-2.5 rounded-lg bg-brand-soft text-brand font-bold block"
+              >
+                CSV 엑셀 다운로드
+              </button>
+            </div>
+          )}
+
+          <div className="bg-brand text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl border border-brand/20">
+            제출 {submittedCount}/{groupList.length}
           </div>
         </div>
       </header>
 
-      <div className="dashboard-body">
-        <aside className="sidebar">
-          <div className="sidebar-heading-row">
-            <div>
-              <p className="panel-label">참여 모둠</p>
-              <h2 className="panel-heading">모둠 현황</h2>
-            </div>
-            <button
-              type="button"
-              onClick={handleFinalizeGroups}
-              disabled={groupLocked || connectedCount === 0}
-              className="button-primary sidebar-lock-button"
-            >
-              {groupLocked ? "확정" : "모둠 확정"}
-            </button>
-          </div>
-
-          <p className="sidebar-helper">
-            {groupLocked
-              ? `${groupList.length}개 모둠 확정 완료`
-              : `${connectedCount}/${groupList.length} 입장`}
-          </p>
-
-          <div className="grid gap-3">
-            {groupList.map(group => {
-              const active = group.id === selectedGroup?.id;
-
-              return (
+      {/* Main Body */}
+      <div className="dashboard-body flex-1 flex overflow-hidden">
+        
+        {/* Sidebar: Group List */}
+        <aside className="sidebar w-64 border-r border-gray-200 bg-white p-5 flex flex-col justify-between overflow-y-auto shrink-0 select-none">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <span className="panel-label">실시간 연동</span>
+                <h2 className="text-lg font-extrabold text-brand-ink">모둠 목록</h2>
+              </div>
+              
+              {!groupLocked ? (
                 <button
-                  key={group.id}
                   type="button"
-                  onClick={() => selectGroup(group.id)}
-                  className={`group-button ${active ? "active" : ""}`}
+                  onClick={handleFinalizeGroups}
+                  disabled={connectedCount === 0}
+                  className="button-primary px-3 h-8 text-[11px] font-bold shadow-brand"
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-2xl font-black">{group.name}</p>
-                    {group.isSubmitted && (
-                      <span className="value-pill">제출</span>
-                    )}
-                  </div>
-
-                  <div className="mt-3 flex gap-2 text-sm font-bold muted">
-                    <span>{group.connected ? "접속" : "미접속"}</span>
-                    <span>/</span>
-                    <span>{group.isSubmitted ? "제출 완료" : "작성 중"}</span>
-                  </div>
+                  참가 확정
                 </button>
-              );
-            })}
+              ) : (
+                <span className="chip chip-success text-[10px] py-0.5 px-2 font-bold">확정됨</span>
+              )}
+            </div>
+
+            <p className="text-[11px] font-serif text-gray-500 leading-snug">
+              {groupLocked
+                ? `수업 참여 ${groupList.length}개 모둠 확정 완료`
+                : `현재 접속: ${connectedCount} / ${groupList.length} 모둠`}
+            </p>
+
+            <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-none">
+              {groupList.map(g => {
+                const active = g.id === selectedGroup?.id;
+
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => selectGroup(g.id)}
+                    className={`group-button w-full p-3 rounded-xl border transition-all text-left flex flex-col justify-between ${
+                      active 
+                        ? "border-brand bg-brand-soft/20 text-brand-ink ring-2 ring-brand/10 font-bold border-l-4 border-l-brand" 
+                        : "border-gray-200 bg-gray-50/50 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-serif font-bold text-sm">{g.name}</span>
+                      {g.isSubmitted && (
+                        <span className="chip chip-success py-0.5 px-1.5 text-[9px] font-bold">제출</span>
+                      )}
+                    </div>
+
+                    <div className="mt-2 flex gap-2 text-[10px] text-gray-400">
+                      <span>{g.connected ? "접속" : "미접속"}</span>
+                      <span>•</span>
+                      <span>{g.isSubmitted ? "작성 완료" : "작성 중"}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </aside>
 
-        <section className="main-grid">
+        {/* Central main dashboard view */}
+        <section className="main-grid flex-1 overflow-y-auto p-6 bg-canvas space-y-6">
+          
           <TimerStartPanel
             groupLocked={groupLocked}
             isRunning={isRunning}
@@ -989,13 +927,9 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
             defaultSeconds={defaultPhaseSeconds}
             onStart={handleStartSession}
             onSetTime={handleSetTime}
+            autoStartTimer={autoStartTimer}
+            setAutoStartTimer={setAutoStartTimer}
           />
-
-          {setupMessage && (
-            <p className="status-callout text-base">
-              {setupMessage}
-            </p>
-          )}
 
           <PhaseControls phase={phase} onChange={setPhase} />
 
@@ -1005,83 +939,97 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
             groupCount={groupList.length}
           />
 
-          <section className="panel">
-            <div className="result-panel-header">
+          {/* Selected Group details / Roulette */}
+          <section className="panel p-6 bg-white border border-gray-200 rounded-3xl shadow-2">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
               <div>
-                <p className="panel-label">선택한 모둠</p>
-                <h2 className="panel-heading mt-1">{selectedGroup?.name ?? "모둠 선택"} 활동 결과</h2>
+                <span className="panel-label">모둠 상세 분석</span>
+                <h2 className="text-xl font-bold text-brand-ink mt-0.5">
+                  {selectedGroup?.name || "선택된 모둠"}의 활동 내용 및 결과
+                </h2>
               </div>
-              <div className="result-header-actions">
-                <p className="text-sm font-bold muted">
-                  2차 설계 제출 후 발표 자료를 새 탭으로 열 수 있습니다.
-                </p>
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={openPresentationView}
+                  onClick={() => setIsFullscreenPresentation(true)}
                   disabled={!canOpenPresentation}
-                  className="button-secondary h-12 px-4 text-sm"
+                  className="button-secondary h-11 px-4 text-xs flex items-center gap-1.5"
                 >
-                  발표 자료 보기
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                  </svg>
+                  <span>전체화면 발표</span>
+                  <span className="text-[10px] text-gray-400 font-bold">(P)</span>
                 </button>
               </div>
             </div>
-            <div className="result-overview mt-5">
-              <div className="result-action-row">
-                <button
-                  type="button"
-                  disabled={
-                    rolling || !selectedGroup?.isSubmitted || selectedGroup?.rouletteDone || phase === "secondDiscussion" || phase === "revision"
-                  }
-                  onClick={handleRoulette}
-                  className="button-primary h-20 w-full text-2xl"
-                >
-                  {resultActionLabel}
-                </button>
 
-                <div className="metric-card text-center">
-                  <p className="text-lg font-bold muted">공개된 역할</p>
-                  <p className="mt-3 text-4xl font-black text-brand">
-                    {selectedGroup?.assignedClass?.label ?? slotText}
-                  </p>
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              
+              {/* Roulette revealing future self */}
+              <div className="border border-gray-100 p-5 rounded-2xl bg-gray-50/50">
+                <span className="panel-label text-center block mb-2">미래의 나 룰렛</span>
+                <RoleReveal 
+                  selectedGroup={selectedGroup} 
+                  onReveal={handleRouletteReveal} 
+                  rolling={rolling}
+                  setRolling={setRolling}
+                />
               </div>
 
-              <FutureSelfPanel selectedGroup={selectedGroup} />
-
-              {displayResult ? (
-                <div className="result-score-layout narrative-result-layout">
-                  <div className="result-score-grid narrative-result-grid">
-                    <InterpretationCard
-                      insight={getSurvivalInsight(displayResult.survivalIndex)}
-                    />
-                    <InterpretationCard
-                      insight={getFreedomInsight(displayResult.assetGrowth)}
-                    />
-                    <InterpretationCard
-                      insight={getIntegrationInsight(displayResult.socialIntegration)}
-                    />
-
-                    <div className="interpretation-card result-final-card narrative-final-card role-reflection-card">
-                      <p className="panel-label">역할 공개 후 성찰</p>
-                      <h3>
-                        내 역할에서 바라본 1차 설계
-                      </h3>
-                      <p>
-                        {displayResult.classResult.label} 입장에서 보면 {displayResult.classResult.message}
-                      </p>
-                      <strong>
-                        이 설계가 나에게 어떤 이익과 부담으로 느껴지는지, 그리고 다른 위치의 시민에게도 설명 가능한지 따져보세요.
-                      </strong>
-                    </div>
+              {/* Selected group metrics and insights */}
+              <div className="space-y-4">
+                <div className="metric-card p-5 border border-gray-100 rounded-2xl bg-white shadow-1">
+                  <span className="panel-label">1차 정책 설계 내용</span>
+                  <div className="mt-3">
+                    {selectedGroup?.isSubmitted || selectedGroup?.result ? (
+                      <PolicySummary constitution={selectedGroup.constitution} />
+                    ) : (
+                      <p className="text-xs font-serif text-gray-400 italic">아직 1차 설계를 제출하지 않은 모둠입니다.</p>
+                    )}
                   </div>
                 </div>
-              ) : (
-                <div className="empty-result-panel">
-                  {isFinalPhase
-                    ? "2차 설계 결과 확인 후 결과가 표시됩니다."
-                    : "역할 공개 이후 우리 선택이 만든 결과가 표시됩니다."}
-                </div>
-              )}
+
+                {displayResult ? (
+                  <div className="space-y-4 animate-fadeIn">
+                    <span className="panel-label block mt-2">1차 설계 영향 해석</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <InterpretationCard
+                        title="가장 불리한 시민"
+                        status={displayResult.survivalIndex >= 80 ? "보장 수준 높음" : displayResult.survivalIndex >= 60 ? "일부 취약지점 발생" : "안전 장치 위태로움"}
+                        body={`생존 지수: ${displayResult.survivalIndex}/100. 최소한의 기초 생활 복지 제공 정도를 나타냅니다.`}
+                        question="노동자와 취약계층이 사회에 동참할 동기가 부여되나요?"
+                      />
+                      <InterpretationCard
+                        title="경제 활동의 자유"
+                        status={displayResult.assetGrowth >= 0 ? "자율성 넉넉함" : displayResult.assetGrowth >= -15 ? "완만한 규제" : "자유에 강한 규제"}
+                        body={`자산 상승률: ${displayResult.assetGrowth}%. 기업 활동과 노동에 대한 세금과 규제 완화 정도입니다.`}
+                        question="투자자와 자영업자들의 고용 의지가 보장받나요?"
+                      />
+                      <InterpretationCard
+                        title="사회적 공감/합의"
+                        status={displayResult.socialIntegration >= 80 ? "합의 수준 높음" : displayResult.socialIntegration >= 60 ? "보완이 요구됨" : "사회 갈등 위험"}
+                        body={`공동체 공감도: ${displayResult.socialIntegration}/100. 계층 간의 자산 불평등 완화율입니다.`}
+                        question="더 불리한 사람에게 혜택을 주는 차등의 원칙이 지켜졌나요?"
+                      />
+                    </div>
+
+                    <div className="p-4 bg-brand-soft/40 border border-brand/10 rounded-2xl">
+                      <span className="text-xs font-bold text-brand block mb-1">
+                        ★ {displayResult.classResult?.label || "공개 역할"} 입장에서의 성찰
+                      </span>
+                      <p className="text-xs text-gray-700 font-serif leading-relaxed">
+                        {displayResult.classResult?.message}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-10 border border-dashed border-gray-200 rounded-2xl text-center text-xs font-serif text-gray-400">
+                    역할이 공개되고, 우리 정책 선택이 만들어낸 해석 지수가 대시보드에 연동됩니다.
+                  </div>
+                )}
+              </div>
+
             </div>
           </section>
 
@@ -1093,7 +1041,135 @@ export default function TeacherDashboard({ pin, teacherPin = "" }) {
             onSelect={selectGroup}
           />
         </section>
+
+        {/* Collapsible Presentation Board (F5) */}
+        {phase === "final" && (
+          <aside className="w-80 border-l border-gray-200 bg-white p-5 overflow-y-auto shrink-0 flex flex-col justify-between select-none animate-slideLeft">
+            <div className="space-y-4">
+              <div className="border-b border-gray-100 pb-3">
+                <span className="panel-label">역할별 비교 보드</span>
+                <h2 className="text-lg font-extrabold text-brand-ink mt-0.5">역할별 비교 분석</h2>
+                <p className="text-[11px] font-serif text-gray-400 mt-1">
+                  같은 역할을 받은 모둠별로 묶어 변화를 90초 발표 동안 빠르게 점검합니다.
+                </p>
+              </div>
+
+              {["upper", "middle", "lower"].map(key => {
+                const category = groupedByClass[key];
+                return (
+                  <div key={key} className="space-y-2 border-b border-gray-50 pb-3">
+                    <span className="text-xs font-bold text-brand uppercase tracking-wider block">
+                      {category.label} ({category.teams.length})
+                    </span>
+                    <div className="space-y-1.5">
+                      {category.teams.map(t => {
+                        const first = t.history?.[0]?.constitution;
+                        const second = t.constitution;
+                        
+                        let changedText = "변화 없음";
+                        let hasChanges = false;
+                        if (first && second) {
+                          const tax = first.taxPolicy !== second.taxPolicy;
+                          const bud = first.budgetDirection !== second.budgetDirection;
+                          const wage = first.wagePolicy !== second.wagePolicy;
+                          if (tax || bud || wage) {
+                            hasChanges = true;
+                            changedText = `변경: ${tax ? "세금 " : ""}${bud ? "예산 " : ""}${wage ? "시급" : ""}`;
+                          }
+                        }
+
+                        return (
+                          <div 
+                            key={t.id} 
+                            onClick={() => selectGroup(t.id)}
+                            className={`p-2.5 rounded-lg border text-xs cursor-pointer flex items-center justify-between ${
+                              t.id === selectedGroup?.id 
+                                ? "border-brand bg-brand-soft/20 text-brand-deep font-semibold" 
+                                : "border-gray-100 bg-gray-50/50 hover:bg-gray-100"
+                            }`}
+                          >
+                            <span className="font-serif">{t.name}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                              hasChanges ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-400"
+                            }`}>
+                              {changedText}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {category.teams.length === 0 && (
+                        <p className="text-[10px] text-gray-300 italic font-serif">이 계열에 배정된 모둠이 아직 없습니다.</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
+        )}
+
       </div>
+
+      {/* Fullscreen Presentation Modal Overlay (T5) */}
+      {isFullscreenPresentation && selectedGroup && (
+        <div className="fixed inset-0 z-50 bg-canvas overflow-y-auto p-6 md:p-12 flex flex-col justify-between animate-fadeIn select-none">
+          <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col justify-between">
+            <header className="border-b-2 border-brand pb-4 mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BrandMark size="lg" />
+                <div>
+                  <span className="text-xs font-bold text-brand uppercase tracking-widest block">Who am I • 발표 모드</span>
+                  <h1 className="text-3xl font-bold font-serif text-brand-ink mt-1">
+                    {selectedGroup.name} 활동 설계도 발표
+                  </h1>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-gray-500 font-serif">이 모둠의 역할: <strong>{selectedGroup.assignedClass?.label}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenPresentation(false)}
+                  className="button-secondary border-red-200 text-red-600 hover:bg-red-50/50 h-12 px-6 rounded-xl flex items-center justify-center font-bold"
+                >
+                  발표 닫기 (Esc)
+                </button>
+              </div>
+            </header>
+
+            {/* Embed Student App presentation view directly to keep style consistency */}
+            <div className="flex-1 my-4">
+              <StudentApp 
+                pin={pin} 
+                groupId={selectedGroup.id} 
+                presentationOnly={true} 
+              />
+            </div>
+
+            <footer className="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-400 font-serif">
+              * 발표 모둠 발표 권장 시간: 90초 (1분 30초). 다른 모둠원들은 경청하며 질문을 준비하세요.
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {/* Esc key listener to close fullscreen presentation */}
+      {isFullscreenPresentation && (
+        <kbd className="hidden" ref={() => {
+          const escClose = (e) => {
+            if (e.key === "Escape") setIsFullscreenPresentation(false);
+          };
+          window.addEventListener("keydown", escClose);
+          return () => window.removeEventListener("keydown", escClose);
+        }} />
+      )}
+
+      {/* Toast Alert */}
+      <Toast 
+        message={toastMessage} 
+        type={toastType} 
+        onClose={() => setToastMessage("")} 
+      />
+
     </main>
   );
 }
