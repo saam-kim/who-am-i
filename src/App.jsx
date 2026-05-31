@@ -6,7 +6,6 @@ import TeacherGuidePage from "./TeacherGuidePage";
 import WrapUpPage from "./WrapUpPage";
 import { getAppPath, getRouteParams } from "./routes";
 import BrandMark from "./components/BrandMark";
-import KeypadInput from "./components/KeypadInput";
 
 export const TEACHER_PIN = "1234";
 
@@ -16,7 +15,6 @@ function StartScreen() {
   const [restorePin, setRestorePin] = useState("");
   const [groupId, setGroupId] = useState("group_1");
   const [message, setMessage] = useState("");
-  const [focusedField, setFocusedField] = useState(null); // 'pin' | 'restorePin' | null
 
   const enter = () => {
     if (role === "teacher" && pin !== TEACHER_PIN) {
@@ -144,7 +142,6 @@ function StartScreen() {
                 setPin("");
                 setRestorePin("");
                 setMessage("");
-                setFocusedField(null);
               }}
               className={`h-12 text-base transition-all ${role === "teacher" ? "active" : ""}`}
             >
@@ -157,7 +154,6 @@ function StartScreen() {
                 setPin("");
                 setRestorePin("");
                 setMessage("");
-                setFocusedField(null);
               }}
               className={`h-12 text-base transition-all ${role === "student" ? "active" : ""}`}
             >
@@ -177,7 +173,6 @@ function StartScreen() {
                   inputMode="numeric"
                   autoComplete="off"
                   value={pin}
-                  onFocus={() => setFocusedField("pin")}
                   onChange={event => {
                     setMessage("");
                     setPin(event.target.value.replace(/\D/g, "").slice(0, 4));
@@ -192,10 +187,9 @@ function StartScreen() {
                 참가 PIN (교사 대시보드 참고)
                 <input
                   type="text"
-                  inputMode="none" // Prevent mobile soft keyboard to prefer our custom Keypad
+                  inputMode="numeric"
                   autoComplete="off"
                   value={pin}
-                  onFocus={() => setFocusedField("pin")}
                   onChange={event => {
                     setMessage("");
                     setPin(event.target.value.replace(/\D/g, "").slice(0, 6));
@@ -241,7 +235,6 @@ function StartScreen() {
                   <input
                     value={restorePin}
                     inputMode="numeric"
-                    onFocus={() => setFocusedField("restorePin")}
                     onChange={event => {
                       setMessage("");
                       setRestorePin(event.target.value.replace(/\D/g, "").slice(0, 6));
@@ -261,24 +254,6 @@ function StartScreen() {
             )}
 
           </div>
-
-          {/* Interactive Numerical Keypad for tablet-friendliness */}
-          {focusedField && (
-            <div className="mt-4 animate-fadeIn">
-              <KeypadInput
-                value={focusedField === "pin" ? pin : restorePin}
-                onChange={(val) => {
-                  setMessage("");
-                  if (focusedField === "pin") {
-                    setPin(val.slice(0, role === "teacher" ? 4 : 6));
-                  } else {
-                    setRestorePin(val.slice(0, 6));
-                  }
-                }}
-                maxLength={focusedField === "pin" ? (role === "teacher" ? 4 : 6) : 6}
-              />
-            </div>
-          )}
 
           {/* Action Button: Hover sweeps gradient */}
           <button
